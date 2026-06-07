@@ -34,7 +34,7 @@ Simulates the complete FIFA World Cup 2026 tournament and estimates championship
 
 ---
 
-## ✨ Key Features
+##  Key Features
 
 ### 🤖 Match Prediction Engine
 
