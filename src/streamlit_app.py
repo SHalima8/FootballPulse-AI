@@ -1007,7 +1007,7 @@ def run_full_simulation():
     return results
 
 
-def run_monte_carlo(n=25):
+def run_monte_carlo(n=500):
     """Run n simulations and return champion probabilities + insights."""
     champion_count = {}
     finalist_count = {}
@@ -1075,8 +1075,8 @@ if "sim_results" not in st.session_state:
     st.session_state.sim_results = None
 
 if run_sim:
-    with st.spinner("Running 100 simulations..."):
-        st.session_state.sim_results = run_monte_carlo(n=25)
+    with st.spinner("Running 500 simulations..."):
+        st.session_state.sim_results = run_monte_carlo(n=500)
 
 if st.session_state.sim_results:
     res = st.session_state.sim_results
@@ -1094,14 +1094,14 @@ if st.session_state.sim_results:
       <div style="font-size:10px;color:#004d1f;letter-spacing:1px;
                   text-transform:uppercase;margin-bottom:8px">AI predicts World Cup 2026 champion</div>
       <div style="font-size:28px;font-weight:600;color:#00ff87;margin-bottom:6px">{top_champ}</div>
-      <div style="font-size:12px;color:#006633">Won <b style="color:#00ff87">{confidence}%</b> of 100 simulations · Based on 92 years of World Cup data</div>
+      <div style="font-size:12px;color:#006633">Won <b style="color:#00ff87">{confidence}%</b> of {res["n"]} simulations · Based on 92 years of World Cup data</div>
     </div>""",
         unsafe_allow_html=True,
     )
 
     # ── Champion odds table ───────────────────────────────
     st.markdown(
-        '<div style="font-size:10px;color:#3a3a3a;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px;font-weight:500">Champion probability — 100 simulations</div>',
+        f'<div style="font-size:10px;color:#3a3a3a;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px;font-weight:500">Champion probability — {res["n"]} simulations</div>',
         unsafe_allow_html=True,
     )
 
@@ -1274,14 +1274,14 @@ if st.session_state.sim_results:
     rs1, rs2, rs3 = st.columns([3, 4, 3])
     with rs2:
         if st.button("Re-simulate", use_container_width=True, key="resim_btn"):
-            with st.spinner("Running 25 simulations..."):
-                st.session_state.sim_results = run_monte_carlo(n=25)
+            with st.spinner("Running 500 simulations..."):
+                st.session_state.sim_results = run_monte_carlo(n=500)
             st.rerun()
 
     st.markdown(
         f"""
     <div style="text-align:center;margin-top:12px">
-      <span style="font-size:11px;color:#1e1e1e">Each simulation is independent · 25 runs · Elo-based probabilities · upsets can always happen</span>
+      <span style="font-size:11px;color:#1e1e1e">Each simulation is independent · {res["n"]} runs · Elo-based probabilities · upsets can always happen</span>
     </div>""",
         unsafe_allow_html=True,
     )
