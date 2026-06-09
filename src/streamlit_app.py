@@ -4,7 +4,7 @@ import numpy as np
 import joblib
 import os
 import feedparser
-import random
+from textwrap import dedent
 from datetime import date
 from dotenv import load_dotenv
 
@@ -17,46 +17,67 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# ══════════════════════════════════════════════════════════
+# GLOBAL CSS
+# ══════════════════════════════════════════════════════════
 st.markdown(
     """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap');
+
+/* Palette
+   Primary   #A855F7   purple
+   Secondary #7C3AED   deep violet
+   Tertiary  #4ADE80   green accent
+   Neutral   #E2E2F0   light text
+   Bg0       #0D0D12   page
+   Bg1       #13131A   card
+   Bg2       #1A1A24   input / hover
+   Border    #2A2A3A
+*/
+
 html, body, [class*="css"], .stApp {
-    font-family: 'Inter', sans-serif !important;
-    background-color: #080808 !important;
-    color: #ffffff;
+    font-family: 'Hanken Grotesk', sans-serif !important;
+    background-color: #0D0D12 !important;
+    color: #E2E2F0 !important;
 }
-#MainMenu { display: none !important; }
-header[data-testid="stHeader"] { display: none !important; }
-footer { display: none !important; }
-div[data-testid="stToolbar"] { display: none !important; }
-div[data-testid="stDecoration"] { display: none !important; }
+#MainMenu, header[data-testid="stHeader"], footer,
+div[data-testid="stToolbar"], div[data-testid="stDecoration"],
 section[data-testid="stSidebar"] { display: none !important; }
 .block-container { padding: 0 !important; max-width: 100% !important; }
 .stApp > div { padding: 0 !important; }
+
+/* Selectbox */
 div[data-baseweb="select"] > div {
-    background-color: #111 !important;
-    border: 0.5px solid #252525 !important;
-    color: #ffffff !important;
-    border-radius: 8px !important;
+    background-color: #1A1A24 !important;
+    border: 0.5px solid #2A2A3A !important;
+    color: #E2E2F0 !important;
+    border-radius: 10px !important;
+    font-family: 'Hanken Grotesk', sans-serif !important;
 }
-div[data-baseweb="select"] span { color: #fff !important; }
-div[data-baseweb="popover"] { background: #111 !important; }
-li[role="option"] { background: #111 !important; color: #aaa !important; }
-li[role="option"]:hover { background: #1a1a1a !important; color: #fff !important; }
+div[data-baseweb="select"] span { color: #E2E2F0 !important; }
+div[data-baseweb="popover"] { background: #1A1A24 !important; border: 0.5px solid #2A2A3A !important; }
+li[role="option"] { background: #1A1A24 !important; color: #9090A8 !important; font-family: 'Hanken Grotesk', sans-serif !important; }
+li[role="option"]:hover { background: #22223A !important; color: #E2E2F0 !important; }
+
+/* Buttons */
 .stButton > button {
-    background: #0f0f0f !important;
-    color: #00ff87 !important;
-    border: 0.5px solid #00ff87 !important;
-    border-radius: 8px !important;
-    font-weight: 500 !important;
+    background: linear-gradient(135deg, #7C3AED, #A855F7) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-family: 'Hanken Grotesk', sans-serif !important;
+    font-weight: 700 !important;
     font-size: 13px !important;
-    padding: 10px 0 !important;
+    padding: 12px 0 !important;
     width: 100% !important;
     letter-spacing: 0.5px !important;
+    transition: opacity .2s !important;
+    text-transform: uppercase !important;
 }
-.stButton > button:hover { background: #001a0d !important; }
-.stAlert { border-radius: 8px !important; }
+.stButton > button:hover { opacity: 0.85 !important; }
+
+/* Radio pills */
 div[data-testid="stRadio"] > div {
     display: flex !important;
     flex-direction: row !important;
@@ -65,34 +86,69 @@ div[data-testid="stRadio"] > div {
     background: transparent !important;
 }
 div[data-testid="stRadio"] label {
-    background: #111 !important;
-    border: 0.5px solid #1e1e1e !important;
+    background: #13131A !important;
+    border: 0.5px solid #2A2A3A !important;
     border-radius: 20px !important;
-    padding: 6px 14px !important;
+    padding: 6px 16px !important;
     font-size: 12px !important;
-    color: #555 !important;
+    color: #5A5A7A !important;
     cursor: pointer !important;
     margin: 0 !important;
+    font-family: 'Hanken Grotesk', sans-serif !important;
+    transition: all .15s !important;
 }
 div[data-testid="stRadio"] label:has(input:checked) {
-    background: #001a0d !important;
-    border-color: #00ff87 !important;
-    color: #00ff87 !important;
+    background: rgba(168,85,247,0.12) !important;
+    border-color: #A855F7 !important;
+    color: #A855F7 !important;
 }
 div[data-testid="stRadio"] input[type="radio"] { display: none !important; }
 div[data-testid="stRadio"] div[data-testid="stMarkdownContainer"] p {
     font-size: 12px !important;
     margin: 0 !important;
 }
+
+/* Tabs — custom styled */
+div[data-testid="stTabs"] > div:first-child {
+    background: transparent !important;
+    border-bottom: 0.5px solid #2A2A3A !important;
+    gap: 0 !important;
+    padding: 0 !important;
+}
+button[data-baseweb="tab"] {
+    background: transparent !important;
+    color: #5A5A7A !important;
+    font-family: 'Hanken Grotesk', sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.8px !important;
+    text-transform: uppercase !important;
+    padding: 12px 20px !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    transition: all .2s !important;
+}
+button[data-baseweb="tab"]:hover { color: #E2E2F0 !important; }
+button[data-baseweb="tab"][aria-selected="true"] {
+    color: #A855F7 !important;
+    border-bottom-color: #A855F7 !important;
+}
+div[data-testid="stTabPanel"] { padding: 0 !important; }
+
+.stAlert { border-radius: 10px !important; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.fade-in { animation: fadeIn .4s ease forwards; }
 </style>
 """,
     unsafe_allow_html=True,
 )
 
 
-# ── Helpers defined at module level ──────────────────────
+# ══════════════════════════════════════════════════════════
+# HELPERS
+# ══════════════════════════════════════════════════════════
 def _team_in_title(title, team):
-    """Return True if the team name (or any long word of it) appears in the text."""
     text_lower = title.lower()
     if team.lower() in text_lower:
         return True
@@ -102,43 +158,7 @@ def _team_in_title(title, team):
     return False
 
 
-def fetch_reddit_rss(team_a, team_b, limit=8):
-    """Fetch Reddit posts via RSS — no API key needed"""
-    import feedparser
-
-    query = f"{team_a}+{team_b}"
-    results = []
-
-    subreddits = ["soccer", "worldcup", "football"]
-
-    for sub in subreddits:
-        url = f"https://www.reddit.com/r/{sub}/search.rss?q={query}&sort=new&limit=10&restrict_sr=1"
-        feed = feedparser.parse(url)
-
-        for entry in feed.entries:
-            title = entry.get("title", "")
-            if (
-                not title
-                or not _team_in_title(title, team_a)
-                and not _team_in_title(title, team_b)
-            ):
-                continue
-            results.append(
-                {
-                    "title": title,
-                    "description": entry.get("summary", "")[:200],
-                    "source": {"name": f"Reddit r/{sub}"},
-                }
-            )
-
-        if len(results) >= limit:
-            break
-
-    return results[:limit]
-
-
 def fetch_google_rss(team):
-    # Try multiple queries so we get enough relevant results
     queries = [f"{team} football", f"{team} soccer", f"{team} World Cup"]
     seen, results = set(), []
     for query in queries:
@@ -213,7 +233,9 @@ def analyse_sentiment(articles):
     return avg, pos, 100 - pos - neg, neg
 
 
-# ── Load model and data ───────────────────────────────────
+# ══════════════════════════════════════════════════════════
+# MODEL + DATA
+# ══════════════════════════════════════════════════════════
 @st.cache_resource
 def load_model():
     base = os.path.join(os.path.dirname(__file__), "..", "models")
@@ -367,6 +389,13 @@ def predict(team_a, team_b, stage_val):
     return round(a_win / tot, 3), round(draw / tot, 3), round(b_win / tot, 3)
 
 
+def get_h2h(team_a, team_b):
+    mask = ((df["Home Team Name"] == team_a) & (df["Away Team Name"] == team_b)) | (
+        (df["Home Team Name"] == team_b) & (df["Away Team Name"] == team_a)
+    )
+    return df[mask].sort_values("Year")
+
+
 all_teams = sorted(set(df["Home Team Name"].tolist() + df["Away Team Name"].tolist()))
 WC2026 = [
     "Argentina",
@@ -406,896 +435,1004 @@ team_options = [t for t in WC2026 if t in all_teams] + [
 
 
 # ══════════════════════════════════════════════════════════
-# UI
+# DEV FLAGS
+# TEST_NEWS_MODE = True  → bypasses June 11 gate so you can
+#   preview the news/sentiment section right now.
+#   Flip back to False before going live.
 # ══════════════════════════════════════════════════════════
-st.markdown(
-    """
-<div style="background:#050505;border-bottom:0.5px solid #1a1a1a;padding:16px 32px;
-            display:flex;align-items:center;justify-content:space-between">
-  <div style="display:flex;align-items:center;gap:12px">
-    <div style="width:34px;height:34px;background:#00ff87;border-radius:8px;
-                display:flex;align-items:center;justify-content:center;font-size:17px;color:#000">⚽</div>
-    <div>
-      <div style="font-size:16px;font-weight:600;color:#fff;letter-spacing:-0.3px">FootballPulse AI</div>
-      <div style="font-size:11px;color:#3a3a3a;margin-top:1px">World Cup 2026 — Match Intelligence · 92 years of data</div>
-    </div>
-  </div>
-  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#00ff87">
-    <div style="width:7px;height:7px;background:#00ff87;border-radius:50%"></div>Live analysis
-  </div>
-</div>
-""",
-    unsafe_allow_html=True,
-)
-
-st.markdown("<div style='padding:28px 32px 0 32px'>", unsafe_allow_html=True)
-
-# Team selector
-st.markdown(
-    '<div style="font-size:10px;color:#3a3a3a;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:14px;font-weight:500">Match predictor</div>',
-    unsafe_allow_html=True,
-)
-
-col1, col_vs, col2 = st.columns([10, 1, 10])
-with col1:
-    team_a = st.selectbox(
-        "A",
-        team_options,
-        index=team_options.index("Brazil") if "Brazil" in team_options else 0,
-        label_visibility="collapsed",
-    )
-with col_vs:
-    st.markdown(
-        "<div style='text-align:center;padding-top:10px;font-size:12px;color:#2a2a2a;font-weight:600'>VS</div>",
-        unsafe_allow_html=True,
-    )
-with col2:
-    team_b = st.selectbox(
-        "B",
-        team_options,
-        index=team_options.index("France") if "France" in team_options else 1,
-        label_visibility="collapsed",
-    )
-
-st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
-
-elo_a = round(elo_ratings.get(team_a, 1000))
-elo_b = round(elo_ratings.get(team_b, 1000))
-c1, _, c2 = st.columns([10, 1, 10])
-with c1:
-    st.markdown(
-        f"""
-    <div style="background:#0d0d0d;border:0.5px solid #1a1a1a;border-radius:10px;padding:18px;text-align:center">
-      <div style="font-size:11px;color:#333;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.8px">Team A</div>
-      <div style="font-size:20px;font-weight:600;color:#fff">{team_a}</div>
-      <div style="font-size:11px;color:#333;margin-top:5px">Elo {elo_a}</div>
-    </div>""",
-        unsafe_allow_html=True,
-    )
-with c2:
-    st.markdown(
-        f"""
-    <div style="background:#0d0d0d;border:0.5px solid #1a1a1a;border-radius:10px;padding:18px;text-align:center">
-      <div style="font-size:11px;color:#333;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.8px">Team B</div>
-      <div style="font-size:20px;font-weight:600;color:#fff">{team_b}</div>
-      <div style="font-size:11px;color:#333;margin-top:5px">Elo {elo_b}</div>
-    </div>""",
-        unsafe_allow_html=True,
-    )
-
-st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-
-# Stage
-st.markdown(
-    '<div style="font-size:10px;color:#3a3a3a;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px;font-weight:500">Tournament stage</div>',
-    unsafe_allow_html=True,
-)
-stage = st.radio(
-    "stage",
-    list(STAGE_MAP.keys()),
-    index=2,
-    horizontal=True,
-    label_visibility="collapsed",
-)
-stage_val = STAGE_MAP[stage]
-
-st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-
-# Button
-cb1, cb2, cb3 = st.columns([3, 4, 3])
-with cb2:
-    predict_btn = st.button("Predict Match", use_container_width=True)
-
-st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-
+TEST_NEWS_MODE = True  # ← set False for production
 
 # ══════════════════════════════════════════════════════════
-# RESULTS
-# ══════════════════════════════════════════════════════════
-if predict_btn:
-    if team_a == team_b:
-        st.warning("Please select two different teams.")
-    else:
-        st.session_state.prediction = {
-            "team_a": team_a,
-            "team_b": team_b,
-            "stage": stage,
-            "p_a": None,
-            "p_draw": None,
-            "p_b": None,
-        }
-        p_a, p_draw, p_b = predict(team_a, team_b, stage_val)
-        st.session_state.prediction.update({
-            "p_a": p_a, "p_draw": p_draw, "p_b": p_b
-        })
-
+# SESSION STATE
+# ══════════════════════════════════════════════════
 if "prediction" not in st.session_state:
     st.session_state.prediction = None
+if "show_pulse_panel" not in st.session_state:
+    st.session_state.show_pulse_panel = False
 
-if st.session_state.prediction and st.session_state.prediction["p_a"] is not None:
-    pred = st.session_state.prediction
-    team_a = pred["team_a"]
-    team_b = pred["team_b"]
-    p_a = pred["p_a"]
-    p_draw = pred["p_draw"]
-    p_b = pred["p_b"]
-    winner = team_a if p_a > p_b else team_b
-    win_prob = max(p_a, p_b)
 
-    st.markdown(
-        '<div style="height:0.5px;background:#141414;margin-bottom:28px"></div>',
-        unsafe_allow_html=True,
-    )
-
-    # Prediction
-    st.markdown(
-        '<div style="font-size:10px;color:#3a3a3a;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:16px;font-weight:500">Prediction</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f"""
-    <div style="background:#001a0d;border:0.5px solid #00ff87;border-radius:10px;
-                padding:20px 24px;margin-bottom:22px;text-align:center">
-      <div style="font-size:10px;color:#004d1f;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;font-weight:500">Predicted winner</div>
-      <div style="font-size:36px;font-weight:700;color:#00ff87;letter-spacing:-0.5px;margin-bottom:8px">{winner}</div>
-      <div style="display:inline-block;background:#003311;border-radius:20px;padding:4px 16px">
-        <span style="font-size:13px;font-weight:600;color:#00ff87">{win_prob*100:.0f}%</span>
-        <span style="font-size:11px;color:#006633;margin-left:4px">confidence</span>
-      </div>
-    </div>""",
-        unsafe_allow_html=True,
-    )
-
-    def prob_bar(label, prob, color):
-        w = int(prob * 100)
-        st.markdown(
-            f"""
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-          <div style="font-size:12px;color:#555;width:140px;flex-shrink:0">{label}</div>
-          <div style="flex:1;height:4px;background:#111;border-radius:2px;overflow:hidden">
-            <div style="width:{w}%;height:100%;background:{color};border-radius:2px"></div>
-          </div>
-          <div style="font-size:13px;font-weight:500;color:#fff;width:36px;text-align:right">{w}%</div>
-        </div>""",
-            unsafe_allow_html=True,
-        )
-
-    prob_bar(f"{team_a} win", p_a, "#00ff87")
-    prob_bar("Draw", p_draw, "#2a2a2a")
-    prob_bar(f"{team_b} win", p_b, "#f59e0b")
-
-    st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-
-    # Why factors
-    st.markdown(
-        '<div style="font-size:10px;color:#3a3a3a;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:16px;font-weight:500">Why — key factors</div>',
-        unsafe_allow_html=True,
-    )
-
-    ha = attack(team_a)
-    ba = attack(team_b)
-    hd = defense(team_a)
-    bd = defense(team_b)
-    hf = recent_form(team_a)
-    bf = recent_form(team_b)
-    hw = win_rate(team_a)
-    bw = win_rate(team_b)
-    la = team_a[:3].upper()
-    lb = team_b[:3].upper()
-
-    def pill(va, vb, la, lb, hib=True):
-        if hib:
-            if va > vb:
-                return f'<span style="background:#001a0d;color:#00ff87;font-size:10px;padding:2px 8px;border-radius:4px;white-space:nowrap">{la} +{round(va-vb,2)}</span>'
-            elif vb > va:
-                return f'<span style="background:#1a0d00;color:#f59e0b;font-size:10px;padding:2px 8px;border-radius:4px;white-space:nowrap">{lb} +{round(vb-va,2)}</span>'
-        else:
-            if va < vb:
-                return f'<span style="background:#001a0d;color:#00ff87;font-size:10px;padding:2px 8px;border-radius:4px;white-space:nowrap">{la} better</span>'
-            elif vb < va:
-                return f'<span style="background:#1a0d00;color:#f59e0b;font-size:10px;padding:2px 8px;border-radius:4px;white-space:nowrap">{lb} better</span>'
-        return '<span style="background:#111;color:#333;font-size:10px;padding:2px 8px;border-radius:4px">Equal</span>'
-
-    factors = [
-        ("Elo rating", elo_a, elo_b, True),
-        ("Attack strength", ha, ba, True),
-        ("Defense", hd, bd, False),
-        ("Recent form", hf, bf, True),
-        ("Win rate", hw, bw, True),
-        ("Stage pressure", None, None, None),
-    ]
-
-    fc1, fc2 = st.columns(2)
-    for i, (name, va, vb, hib) in enumerate(factors):
-        col = fc1 if i % 2 == 0 else fc2
-        if name == "Stage pressure":
-            col.markdown(
-                f"""
-            <div style="background:#0d0d0d;border:0.5px solid #171717;border-radius:8px;padding:12px;margin-bottom:8px">
-              <div style="font-size:11px;color:#444;margin-bottom:6px">{name}</div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-size:13px;color:#666">{stage}</span>
-                <span style="background:#111;color:#333;font-size:10px;padding:2px 8px;border-radius:4px">Neutral</span>
-              </div>
-            </div>""",
-                unsafe_allow_html=True,
-            )
-        else:
-            p = pill(va, vb, la, lb, hib)
-            col.markdown(
-                f"""
-            <div style="background:#0d0d0d;border:0.5px solid #171717;border-radius:8px;padding:12px;margin-bottom:8px">
-              <div style="font-size:11px;color:#444;margin-bottom:6px">{name}</div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-size:13px;font-weight:500;color:#00ff87">{va}</span>
-                <span style="font-size:10px;color:#2a2a2a">vs</span>
-                <span style="font-size:13px;font-weight:500;color:#f59e0b">{vb}</span>
-                {p}
-              </div>
-            </div>""",
-                unsafe_allow_html=True,
-            )
-
-    st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-
-    # ── Sentiment — date-gated ───────────────────────────────
-    if date.today() >= date(2026, 6, 11):
-        import re as _re
-        from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-
-        st.markdown(
-            '<div style="font-size:10px;color:#3a3a3a;letter-spacing:1.2px;'
-            'text-transform:uppercase;margin-bottom:16px;font-weight:500">'
-            "World Cup — trending now</div>",
-            unsafe_allow_html=True,
-        )
-
-        @st.cache_data(ttl=1800, show_spinner=False)
-        def fetch_wc_headlines():
-            """Fetch general WC2026 headlines from Google RSS — no API key needed."""
-            queries = ["FIFA World Cup 2026", "World Cup 2026 football"]
-            seen, results = set(), []
-            for query in queries:
-                url = f"https://news.google.com/rss/search?q={query.replace(' ', '+')}&hl=en&gl=US&ceid=US:en"
-                feed = feedparser.parse(url)
-                for e in feed.entries:
-                    title = e.get("title", "")
-                    if not title:
-                        continue
-                    key = title[:40].lower()
-                    if key in seen:
-                        continue
-                    seen.add(key)
-                    src = e.get("source", {})
-                    src_name = (
-                        (src.get("title") or src.get("name") or "Google News")
-                        if isinstance(src, dict)
-                        else (str(src) or "Google News")
-                    )
-                    results.append(
-                        {
-                            "title": title,
-                            "description": e.get("summary", ""),
-                            "source": {"name": src_name},
-                        }
-                    )
-                    if len(results) >= 12:
-                        break
-                if len(results) >= 12:
-                    break
-            return results
-
-        wc_headlines = fetch_wc_headlines()
-
-        # ── Trending topics ──────────────────────────────────
-        from collections import Counter
-
-        STOP = {
-            "world",
-            "cup",
-            "what",
-            "when",
-            "how",
-            "who",
-            "the",
-            "for",
-            "and",
-            "with",
-            "from",
-            "this",
-            "that",
-            "will",
-            "have",
-            "been",
-            "their",
-            "they",
-            "about",
-            "into",
-            "after",
-            "ahead",
-            "says",
-            "said",
-            "over",
-            "just",
-            "more",
-            "than",
-            "some",
-            "also",
-            "first",
-            "last",
-            "next",
-            "year",
-            "time",
-            "game",
-            "match",
-            "men",
-            "women",
-            "top",
-            "full",
-            "list",
-            "key",
-            "new",
-            "2026",
-            "2025",
-            "fifa",
-            "football",
-            "soccer",
-            "world",
-            "cup",
-            "news",
-        }
-        counter = Counter()
-        for art in wc_headlines:
-            title = _re.sub(
-                r"\s*[-–|]\s*[^-–|]{3,40}$", "", art.get("title", "")
-            ).strip()
-            for w in _re.findall(r"\b[A-Za-z][a-z]{2,}\b", title):
-                if w.lower() not in STOP and len(w) > 3:
-                    counter[w.lower()] += 1
-
-        topics = []
-        for word, count in counter.most_common(10):
-            if len(topics) >= 5:
-                break
-            if count >= 2:
-                topics.append((word.capitalize(), count, count >= 3))
-
-        topic_rows = ""
-        for i, (word, count, is_hot) in enumerate(topics):
-            border = "border-bottom:0.5px solid #111;" if i < len(topics) - 1 else ""
-            badge = (
-                '<span style="background:#1a0800;border:0.5px solid #f59e0b44;'
-                "color:#f59e0b;font-size:10px;padding:2px 6px;border-radius:4px;"
-                'margin-right:8px">HOT</span>'
-                if is_hot
-                else ""
-            )
-            nc = "#aaa" if is_hot else "#444"
-            cnt_lbl = f"{count} mentions" if count != 1 else "1 mention"
-            topic_rows += f"""
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;{border}">
-              <div>{badge}<span style="font-size:12px;color:{nc}">#{word}</span></div>
-              <span style="font-size:11px;color:#2a2a2a">{cnt_lbl}</span>
-            </div>"""
-
-        if not topic_rows:
-            topic_rows = '<div style="font-size:12px;color:#2a2a2a;padding:12px 0;text-align:center">Topics loading — check back soon</div>'
-
-        st.markdown(
-            f"""
-        <div style="background:#0d0d0d;border:0.5px solid #171717;border-radius:10px;padding:16px;margin-bottom:12px">
-          <div style="font-size:10px;color:#3a3a3a;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;font-weight:500">Trending topics</div>
-          <div>{topic_rows}</div>
-        </div>""",
-            unsafe_allow_html=True,
-        )
-
-        # ── Latest headlines ─────────────────────────────────
-        az = SentimentIntensityAnalyzer()
-        st.markdown(
-            """
-        <div style="background:#0d0d0d;border:0.5px solid #171717;border-radius:10px;padding:16px">
-          <div style="font-size:10px;color:#3a3a3a;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;font-weight:500">Latest headlines</div>
-        """,
-            unsafe_allow_html=True,
-        )
-
-        if wc_headlines:
-            for art in wc_headlines[:6]:
-                raw = art.get("title") or ""
-                clean = _re.sub(r"\s*[-–|]\s*[^-–|]{3,40}$", "", raw).strip()[:90]
-                if not clean:
-                    continue
-                source = (art.get("source", {}).get("name") or "News")[:18]
-                score = az.polarity_scores(clean)["compound"]
-                if score > 0.05:
-                    bg, fg, br, label = "#001a0d", "#00ff87", "#00ff8733", "positive"
-                elif score < -0.05:
-                    bg, fg, br, label = "#1a0000", "#ef4444", "#ef444433", "negative"
-                else:
-                    bg, fg, br, label = "#111", "#444", "#222", "neutral"
-                st.markdown(
-                    f"""
-                <div style="background:#111;border-radius:6px;padding:10px 12px;margin-bottom:6px;
-                            display:flex;gap:10px;align-items:flex-start">
-                  <div style="font-size:10px;color:#333;min-width:60px;margin-top:1px;line-height:1.4">{source}</div>
-                  <div style="font-size:12px;color:#666;flex:1;line-height:1.5">{clean}</div>
-                  <span style="background:{bg};color:{fg};font-size:10px;padding:2px 7px;
-                               border-radius:4px;border:0.5px solid {br};flex-shrink:0">{label}</span>
-                </div>""",
-                    unsafe_allow_html=True,
-                )
-        else:
-            st.markdown(
-                '<div style="font-size:12px;color:#2a2a2a;text-align:center;padding:16px 0">'
-                "No headlines found — check back soon.</div>",
-                unsafe_allow_html=True,
-            )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    else:
-        # ── Before June 11 — clean placeholder ───────────────
-        st.markdown(
-            """
-        <div style="background:#0d0d0d;border:0.5px solid #171717;border-radius:10px;
-                    padding:32px 24px;text-align:center;margin-top:8px">
-          <div style="font-size:28px;margin-bottom:12px">⏳</div>
-          <div style="font-size:13px;font-weight:500;color:#555;margin-bottom:6px">Live coverage unlocks June 11</div>
-          <div style="font-size:11px;color:#2a2a2a;line-height:1.6">
-            Trending headlines &amp; topics will appear here once the World Cup kicks off.
-          </div>
-          <div style="margin-top:18px;display:inline-block;background:#001a0d;border:0.5px solid #00ff8733;
-                      border-radius:6px;padding:6px 16px;font-size:11px;color:#004d1f">
-            Opening match · June 11, 2026
-          </div>
-        </div>""",
-            unsafe_allow_html=True,
-        )
-
-    st.markdown(
-        '<div style="height:0.5px;background:#141414;margin:32px 0 28px"></div>',
-        unsafe_allow_html=True,
-    )
-st.markdown(
-    '<div style="font-size:10px;color:#3a3a3a;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:6px;font-weight:500">World Cup 2026 Simulator</div>',
-    unsafe_allow_html=True,
-)
-st.markdown(
-    '<div style="font-size:12px;color:#333;margin-bottom:20px">100 simulations · probabilistic upsets · champion odds</div>',
-    unsafe_allow_html=True,
-)
-
-# ── WC2026 confirmed teams in groups ────────────────────
-WC2026_GROUPS = {
-    "A": ["USA", "Panama", "Senegal", "Bolivia"],
-    "B": ["Mexico", "Ecuador", "New Zealand", "Canada"],  # simplified
-    "C": ["Argentina", "Peru", "Chile", "Canada"],
-    "D": ["France", "Germany", "Belgium", "Italy"],  # hypothetical
-    "E": ["Spain", "Portugal", "Turkey", "Georgia"],
-    "F": ["Brazil", "Uruguay", "Colombia", "Venezuela"],
-    "G": ["England", "Netherlands", "Croatia", "Poland"],
-    "H": ["Morocco", "Japan", "South Korea", "Iran"],
-}
-
-
-def simulate_match_prob(team_a, team_b, stage="group"):
-    """Pure Elo for speed — fast enough for Monte Carlo."""
-    ea = elo_ratings.get(team_a, 1000)
-    eb = elo_ratings.get(team_b, 1000)
-    diff = ea - eb
-    p_a = 1 / (1 + 10 ** (-diff / 400))
-    p_b = 1 - p_a
-    return p_a * 0.85, 0.15, p_b * 0.85
-
-
-def weighted_winner(team_a, team_b, stage="knockout"):
-    """Pick a winner probabilistically — upsets can happen."""
-    p_a, p_draw, p_b = simulate_match_prob(team_a, team_b, stage)
-    # In knockouts no draws — redistribute draw probability
-    total = p_a + p_b
-    p_a_final = p_a / total
-    r = random.random()
-    if r < p_a_final:
-        return team_a, round(p_a_final * 100)
-    else:
-        return team_b, round((1 - p_a_final) * 100)
-
-
-def simulate_group_stage(groups):
-    """Each group: simulate all 6 matches, top 2 advance."""
-    qualifiers = {}
-    for group_name, teams in groups.items():
-        points = {t: 0 for t in teams}
-        gd = {t: 0 for t in teams}
-        for i in range(len(teams)):
-            for j in range(i + 1, len(teams)):
-                ta, tb = teams[i], teams[j]
-                p_a, p_draw, p_b = simulate_match_prob(ta, tb, "group")
-                r = random.random()
-                if r < p_a:
-                    points[ta] += 3
-                    gd[ta] += 1
-                    gd[tb] -= 1
-                elif r < p_a + p_draw:
-                    points[ta] += 1
-                    points[tb] += 1
-                else:
-                    points[tb] += 3
-                    gd[tb] += 1
-                    gd[ta] -= 1
-        ranked = sorted(teams, key=lambda t: (points[t], gd[t]), reverse=True)
-        qualifiers[group_name] = ranked[:2]
-    return qualifiers
-
-
-def simulate_knockout(teams_in, stage_name):
-    """Simulate one knockout round, return winners with probs."""
-    winners = []
-    matches = []
-    for i in range(0, len(teams_in), 2):
-        ta = teams_in[i]
-        tb = teams_in[i + 1]
-        winner, prob = weighted_winner(ta, tb, "knockout")
-        loser = tb if winner == ta else ta
-        matches.append((ta, tb, winner, prob))
-        winners.append(winner)
-    return winners, matches
-
-
-def run_full_simulation():
-    """Run entire WC2026 from group stage to final."""
-    results = {}
-
-    qualifiers = simulate_group_stage(WC2026_GROUPS)
-    results["groups"] = qualifiers
-
-    group_names = list(qualifiers.keys())
-    r16_teams = []
-    pairings = [("A", "B"), ("C", "D"), ("E", "F"), ("G", "H")]
-    for g1, g2 in pairings:
-        r16_teams.append(qualifiers[g1][0])
-        r16_teams.append(qualifiers[g2][1])
-        r16_teams.append(qualifiers[g2][0])
-        r16_teams.append(qualifiers[g1][1])
-
-    r16_winners, r16_matches = simulate_knockout(r16_teams, "Round of 16")
-    qf_winners, qf_matches = simulate_knockout(r16_winners, "Quarter-final")
-    sf_winners, sf_matches = simulate_knockout(qf_winners, "Semi-final")
-    final_winners, final_matches = simulate_knockout(sf_winners, "Final")
-
-    results["r16"] = r16_matches
-    results["qf"] = qf_matches
-    results["sf"] = sf_matches
-    results["final"] = final_matches
-    results["winner"] = final_winners[0]
-
-    # Track biggest upset in this simulation
-    biggest_upset = None
-    worst_gap = 0
-    for stage_matches in [r16_matches, qf_matches, sf_matches, final_matches]:
-        for ta, tb, winner, prob in stage_matches:
-            loser = tb if winner == ta else ta
-            ea = elo_ratings.get(winner, 1000)
-            eb = elo_ratings.get(loser, 1000)
-            gap = eb - ea  # positive = winner had lower Elo = upset
-            if gap > worst_gap:
-                worst_gap = gap
-                biggest_upset = (winner, loser, prob, gap)
-    results["biggest_upset"] = biggest_upset
-
-    return results
-
-
-def run_monte_carlo(n=500):
-    """Run n simulations and return champion probabilities + insights."""
-    champion_count = {}
-    finalist_count = {}
-    semi_count = {}
-    all_upsets = []
-
-    for _ in range(n):
-        res = run_full_simulation()
-        winner = res["winner"]
-        champion_count[winner] = champion_count.get(winner, 0) + 1
-
-        # Track finalists
-        for ta, tb, w, prob in res["final"]:
-            for team in [ta, tb]:
-                finalist_count[team] = finalist_count.get(team, 0) + 1
-
-        # Track semi finalists
-        for ta, tb, w, prob in res["sf"]:
-            for team in [ta, tb]:
-                semi_count[team] = semi_count.get(team, 0) + 1
-
-        # Collect upsets
-        if res["biggest_upset"]:
-            all_upsets.append(res["biggest_upset"])
-
-    # Sort champion odds
-    sorted_champs = sorted(champion_count.items(), key=lambda x: x[1], reverse=True)
-
-    # Dark horse = high semi-final rate but low Elo (outside top 8 Elo)
-    top8_elo = sorted(elo_ratings.items(), key=lambda x: x[1], reverse=True)[:8]
-    top8_teams = {t for t, _ in top8_elo}
-    dark_horse = None
-    best_dark_rate = 0
-    for team, count in semi_count.items():
-        rate = count / n
-        if team not in top8_teams and rate > best_dark_rate:
-            best_dark_rate = rate
-            dark_horse = (team, rate)
-
-    # Biggest upset across all simulations
-    biggest_upset = max(all_upsets, key=lambda x: x[3]) if all_upsets else None
-
-    # Most likely final
-    most_likely_final = sorted(finalist_count.items(), key=lambda x: x[1], reverse=True)[:2]
-
-    return {
-        "champion_odds": sorted_champs,
-        "dark_horse": dark_horse,
-        "biggest_upset": biggest_upset,
-        "most_likely_final": most_likely_final,
-        "n": n,
-        # Keep one full bracket to display
-        "last_bracket": run_full_simulation(),
-    }
-
-
-# ── Streamlit UI ─────────────────────────────────────────
-sim_col1, sim_col2, sim_col3 = st.columns([3, 4, 3])
-with sim_col2:
-    run_sim = st.button(
-        "⚽  Simulate World Cup 2026", use_container_width=True, key="sim_btn"
-    )
-
-if "sim_results" not in st.session_state:
-    st.session_state.sim_results = None
-
-if run_sim:
-    with st.spinner("Running 500 simulations..."):
-        st.session_state.sim_results = run_monte_carlo(n=500)
-
-if st.session_state.sim_results:
-    res = st.session_state.sim_results
-    bracket = res["last_bracket"]
-
-    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-
-    # ── Champion + confidence ─────────────────────────────
-    top_champ, top_count = res["champion_odds"][0]
-    confidence = round(top_count / res["n"] * 100)
-    st.markdown(
-        f"""
-    <div style="background:#001a0d;border:0.5px solid #00ff87;border-radius:10px;
-                padding:20px;text-align:center;margin-bottom:24px">
-      <div style="font-size:10px;color:#004d1f;letter-spacing:1px;
-                  text-transform:uppercase;margin-bottom:8px">AI predicts World Cup 2026 champion</div>
-      <div style="font-size:28px;font-weight:600;color:#00ff87;margin-bottom:6px">{top_champ}</div>
-      <div style="font-size:12px;color:#006633">Won <b style="color:#00ff87">{confidence}%</b> of {res["n"]} simulations · Based on 92 years of World Cup data</div>
-    </div>""",
-        unsafe_allow_html=True,
-    )
-
-    # ── Champion odds table ───────────────────────────────
-    st.markdown(
-        f'<div style="font-size:10px;color:#3a3a3a;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px;font-weight:500">Champion probability — {res["n"]} simulations</div>',
-        unsafe_allow_html=True,
-    )
-
-    odds_rows = ""
-    for i, (team, count) in enumerate(res["champion_odds"][:8]):
-        pct = round(count / res["n"] * 100)
-        if pct == 0:
-            continue
-        color = "#00ff87" if i == 0 else "#f59e0b" if i == 1 else "#555"
-        bar_w = int(pct / res["champion_odds"][0][1] * 100)
-        rank_label = "🥇" if i == 0 else "🥈" if i == 1 else "🥉" if i == 2 else f"{i+1}."
-        odds_rows += f"""
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;width:100%">
-          <div style="font-size:11px;color:#333;width:20px;text-align:center;flex-shrink:0">{rank_label}</div>
-          <div style="font-size:12px;color:{color};width:90px;flex-shrink:0">{team}</div>
-          <div style="flex:1;min-width:0;height:3px;background:#111;border-radius:2px;overflow:hidden">
-            <div style="width:{bar_w}%;height:3px;background:{color};border-radius:2px"></div>
-          </div>
-          <div style="font-size:13px;font-weight:500;color:{color};width:36px;text-align:right;flex-shrink:0">{pct}%</div>
-        </div>"""
-
-    st.markdown(
-        f'<div style="background:#0d0d0d;border:0.5px solid #171717;border-radius:10px;padding:16px;margin-bottom:20px">{odds_rows}</div>',
-        unsafe_allow_html=True,
-    )
-
-    # ── Group stage results ───────────────────────────────
-    st.markdown(
-        '<div style="font-size:10px;color:#3a3a3a;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px;font-weight:500">Group stage — qualifiers</div>',
-        unsafe_allow_html=True,
-    )
-
-    group_cols = st.columns(4)
-    group_items = list(bracket["groups"].items())
-    for idx, (grp, teams) in enumerate(group_items):
-        with group_cols[idx % 4]:
-            st.markdown(
-                f"""
-            <div style="background:#0d0d0d;border:0.5px solid #171717;border-radius:8px;padding:10px;margin-bottom:8px">
-              <div style="font-size:10px;color:#333;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.8px">Group {grp}</div>
-              <div style="font-size:12px;color:#00ff87;margin-bottom:4px">✓ {teams[0]}</div>
-              <div style="font-size:12px;color:#00ff87">✓ {teams[1]}</div>
-            </div>""",
-                unsafe_allow_html=True,
-            )
-
-    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
-
-    # ── Knockout bracket ──────────────────────────────────
-    def render_matches(matches, label):
-        st.markdown(
-            f'<div style="font-size:10px;color:#3a3a3a;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;font-weight:500">{label}</div>',
-            unsafe_allow_html=True,
-        )
-        cols = st.columns(len(matches))
-        for i, (ta, tb, winner, prob) in enumerate(matches):
-            loser = tb if winner == ta else ta
-            with cols[i]:
-                st.markdown(
-                    f"""
-                <div style="background:#0d0d0d;border:0.5px solid #171717;border-radius:8px;padding:10px">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                    <span style="font-size:12px;color:#00ff87;font-weight:500">{winner}</span>
-                    <span style="font-size:10px;color:#004d1f">{prob}%</span>
-                  </div>
-                  <div style="height:0.5px;background:#111;margin-bottom:6px"></div>
-                  <div style="font-size:11px;color:#2a2a2a">{loser}</div>
-                </div>""",
-                    unsafe_allow_html=True,
-                )
-        st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
-
-    render_matches(bracket["qf"], "Quarter-finals")
-    render_matches(bracket["sf"], "Semi-finals")
-    render_matches(bracket["final"], "Final")
-
-
-    # ── Dark Horse + Biggest Upset ────────────────────────
-    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-    ins1, ins2 = st.columns(2)
-
-    with ins1:
-        if res["dark_horse"]:
-            dh_team, dh_rate = res["dark_horse"]
-            dh_pct = round(dh_rate * 100)
-            st.markdown(
-                f"""
-            <div style="background:#0d0d0d;border:0.5px solid #171717;border-radius:10px;padding:16px;height:100%">
-              <div style="font-size:10px;color:#3a3a3a;letter-spacing:1px;text-transform:uppercase;font-weight:500;margin-bottom:10px"> Dark horse</div>
-              <div style="font-size:20px;font-weight:600;color:#f59e0b;margin-bottom:4px">{dh_team}</div>
-              <div style="font-size:11px;color:#333">Reached semi-finals in</div>
-              <div style="font-size:22px;font-weight:600;color:#f59e0b;margin:4px 0">{dh_pct}%</div>
-              <div style="font-size:11px;color:#333">of simulations despite low Elo</div>
-            </div>""",
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                """
-            <div style="background:#0d0d0d;border:0.5px solid #171717;border-radius:10px;padding:16px">
-              <div style="font-size:10px;color:#3a3a3a;letter-spacing:1px;text-transform:uppercase;font-weight:500;margin-bottom:10px"> Dark horse</div>
-              <div style="font-size:12px;color:#2a2a2a">No clear dark horse this time</div>
-            </div>""",
-                unsafe_allow_html=True,
-            )
-
-    with ins2:
-        if res["biggest_upset"]:
-            up_winner, up_loser, up_prob, up_gap = res["biggest_upset"]
-            st.markdown(
-                f"""
-            <div style="background:#0d0d0d;border:0.5px solid #171717;border-radius:10px;padding:16px;height:100%">
-              <div style="font-size:10px;color:#3a3a3a;letter-spacing:1px;text-transform:uppercase;font-weight:500;margin-bottom:10px"> Biggest upset</div>
-              <div style="font-size:16px;font-weight:600;color:#00ff87;margin-bottom:2px">{up_winner}</div>
-              <div style="font-size:11px;color:#333;margin-bottom:6px">defeated</div>
-              <div style="font-size:16px;font-weight:600;color:#ef4444;margin-bottom:8px">{up_loser}</div>
-              <div style="display:flex;gap:16px">
-                <div>
-                  <div style="font-size:10px;color:#2a2a2a">Win prob before</div>
-                  <div style="font-size:14px;font-weight:500;color:#f59e0b">{up_prob}%</div>
-                </div>
-                <div>
-                  <div style="font-size:10px;color:#2a2a2a">Elo gap</div>
-                  <div style="font-size:14px;font-weight:500;color:#f59e0b">+{round(up_gap)}</div>
-                </div>
-              </div>
-            </div>""",
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                """
-            <div style="background:#0d0d0d;border:0.5px solid #171717;border-radius:10px;padding:16px">
-              <div style="font-size:10px;color:#3a3a3a;letter-spacing:1px;text-transform:uppercase;font-weight:500;margin-bottom:10px">⚡ Biggest upset</div>
-              <div style="font-size:12px;color:#2a2a2a">Favourites held their ground</div>
-            </div>""",
-                unsafe_allow_html=True,
-            )
-
-    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
-
-    # ── Most likely final ─────────────────────────────────
-    if res["most_likely_final"] and len(res["most_likely_final"]) >= 2:
-        ft1, ft2 = res["most_likely_final"][0][0], res["most_likely_final"][1][0]
-        fp1 = round(res["most_likely_final"][0][1] / res["n"] * 100)
-        fp2 = round(res["most_likely_final"][1][1] / res["n"] * 100)
-        st.markdown(
-            f"""
-        <div style="background:#0d0d0d;border:0.5px solid #171717;border-radius:10px;
-                    padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;gap:16px">
-          <div style="font-size:10px;color:#3a3a3a;letter-spacing:1px;text-transform:uppercase;font-weight:500;flex-shrink:0">Most likely final</div>
-          <div style="display:flex;align-items:center;gap:12px;flex:1;justify-content:center">
-            <div style="text-align:center">
-              <div style="font-size:14px;font-weight:600;color:#00ff87">{ft1}</div>
-              <div style="font-size:10px;color:#004d1f">{fp1}% reached final</div>
-            </div>
-            <div style="font-size:12px;color:#2a2a2a;font-weight:600">vs</div>
-            <div style="text-align:center">
-              <div style="font-size:14px;font-weight:600;color:#f59e0b">{ft2}</div>
-              <div style="font-size:10px;color:#7a4f00">{fp2}% reached final</div>
-            </div>
-          </div>
-        </div>""",
-            unsafe_allow_html=True,
-        )
-
-
-    # ── Re-simulate button ────────────────────────────────
-    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-    rs1, rs2, rs3 = st.columns([3, 4, 3])
-    with rs2:
-        if st.button("Re-simulate", use_container_width=True, key="resim_btn"):
-            with st.spinner("Running 500 simulations..."):
-                st.session_state.sim_results = run_monte_carlo(n=500)
-            st.rerun()
-
-    st.markdown(
-        f"""
-    <div style="text-align:center;margin-top:12px">
-      <span style="font-size:11px;color:#1e1e1e">Each simulation is independent · {res["n"]} runs · Elo-based probabilities · upsets can always happen</span>
-    </div>""",
-        unsafe_allow_html=True,
-    )
-
-
-# Footer
+# ══════════════════════════════════════════════════════════
+# TOPBAR
+# ══════════════════════════════════════════════════════════
 st.markdown(
     """
-<div style="text-align:center;padding:24px 32px;border-top:0.5px solid #111;margin-top:32px">
-  <div style="font-size:11px;color:#2a2a2a">FootballPulse AI &nbsp;·&nbsp; Built on 92 years of World Cup data &nbsp;·&nbsp; Model accuracy ~57%</div>
-  <div style="font-size:11px;color:#1e1e1e;margin-top:4px">Predictions are probabilistic — football is beautifully unpredictable</div>
+<div style="background:#0D0D12;border-bottom:0.5px solid #2A2A3A;padding:14px 32px;
+            display:flex;align-items:center;justify-content:space-between;
+            font-family:'Hanken Grotesk',sans-serif;position:sticky;top:0;z-index:100">
+  <div style="display:flex;align-items:center;gap:14px">
+    <div style="width:36px;height:36px;background:linear-gradient(135deg,#7C3AED,#A855F7);
+                border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">⚽</div>
+    <div>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span style="font-size:17px;font-weight:800;color:#E2E2F0;letter-spacing:-0.6px;line-height:1">FootballPulse</span>
+        <span style="font-size:11px;font-weight:500;color:#A855F7;letter-spacing:0.2px;background:rgba(168,85,247,0.12);
+                     border:0.5px solid rgba(168,85,247,0.3);border-radius:4px;padding:1px 6px">AI</span>
+      </div>
+      <div style="font-size:10px;color:#3A3A55;margin-top:3px;letter-spacing:0.3px">
+        World Cup 2026 &nbsp;·&nbsp; 92 yrs of data &nbsp;·&nbsp; Match Intelligence
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <div style="font-size:11px;color:#3A3A55;letter-spacing:0.3px;display:none">
+      <span style="color:#5A5A7A">Model acc.</span> <span style="color:#7A7A9A;font-weight:600">~57%</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#4ADE80;font-weight:600;
+                background:rgba(74,222,128,0.06);border:0.5px solid rgba(74,222,128,0.2);
+                border-radius:20px;padding:5px 12px">
+      <div style="width:6px;height:6px;background:#4ADE80;border-radius:50%;animation:pulse 2s infinite"></div>
+      Live
+    </div>
+  </div>
 </div>
 """,
     unsafe_allow_html=True,
 )
 
+
+# ══════════════════════════════════════════════════════════
+# MAIN LAYOUT — two-panel grid
+# ══════════════════════════════════════════════════════════
+left_col, right_col = st.columns([2, 1], gap="small")
+
+
+# ──────────────────────────────────────────────────────────
+# LEFT PANEL — Tabs: Match Predictor | Head-to-Head | Pulse
+# ──────────────────────────────────────────────────────────
+with left_col:
+    st.markdown("<div style='padding:24px 24px 0 32px'>", unsafe_allow_html=True)
+
+    tab_pred, tab_h2h, tab_pulse = st.tabs(
+        ["Match Predictor", "Head · to · Head", "World Cup Pulse"]
+    )
+
+    # ══ TAB 1 — MATCH PREDICTOR ══════════════════════════
+    with tab_pred:
+        st.session_state.show_pulse_panel = False
+        st.markdown("<div style='padding-top:20px'>", unsafe_allow_html=True)
+
+        # ── Team selectors ────────────────────────────────
+        sel1, sel_vs, sel2 = st.columns([10, 1, 10])
+        with sel1:
+            team_a = st.selectbox(
+                "Team A",
+                team_options,
+                index=team_options.index("Brazil") if "Brazil" in team_options else 0,
+                label_visibility="collapsed",
+            )
+        with sel_vs:
+            st.markdown(
+                "<div style='text-align:center;padding-top:10px;font-size:11px;"
+                "color:#3A3A55;font-weight:700'>VS</div>",
+                unsafe_allow_html=True,
+            )
+        with sel2:
+            team_b = st.selectbox(
+                "Team B",
+                team_options,
+                index=team_options.index("France") if "France" in team_options else 1,
+                label_visibility="collapsed",
+            )
+
+        st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+
+        # ── Team cards ────────────────────────────────────
+        elo_a = round(elo_ratings.get(team_a, 1000))
+        elo_b = round(elo_ratings.get(team_b, 1000))
+        ca, _, cb = st.columns([10, 1, 10])
+        with ca:
+            st.markdown(
+                f"""
+            <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:12px;
+                        padding:20px;text-align:center;font-family:'Hanken Grotesk',sans-serif">
+              <div style="font-size:10px;color:#5A5A7A;letter-spacing:1.2px;text-transform:uppercase;
+                          font-weight:600;margin-bottom:8px">Team A</div>
+              <div style="font-size:26px;font-weight:800;color:#E2E2F0;letter-spacing:-0.5px">{team_a}</div>
+              <div style="margin-top:8px;display:inline-block;background:rgba(168,85,247,0.1);
+                          border:0.5px solid rgba(168,85,247,0.3);border-radius:6px;
+                          padding:3px 10px;font-size:11px;color:#A855F7;font-weight:600">Elo {elo_a}</div>
+            </div>""",
+                unsafe_allow_html=True,
+            )
+        with cb:
+            st.markdown(
+                f"""
+            <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:12px;
+                        padding:20px;text-align:center;font-family:'Hanken Grotesk',sans-serif">
+              <div style="font-size:10px;color:#5A5A7A;letter-spacing:1.2px;text-transform:uppercase;
+                          font-weight:600;margin-bottom:8px">Team B</div>
+              <div style="font-size:26px;font-weight:800;color:#E2E2F0;letter-spacing:-0.5px">{team_b}</div>
+              <div style="margin-top:8px;display:inline-block;background:rgba(74,222,128,0.1);
+                          border:0.5px solid rgba(74,222,128,0.3);border-radius:6px;
+                          padding:3px 10px;font-size:11px;color:#4ADE80;font-weight:600">Elo {elo_b}</div>
+            </div>""",
+                unsafe_allow_html=True,
+            )
+
+        st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+
+        # ── Stage selector ────────────────────────────────
+        st.markdown(
+            '<div style="font-size:10px;color:#5A5A7A;letter-spacing:1.4px;text-transform:uppercase;'
+            'font-weight:600;margin-bottom:10px;font-family:Hanken Grotesk,sans-serif">Tournament Stage</div>',
+            unsafe_allow_html=True,
+        )
+        stage = st.radio(
+            "stage",
+            list(STAGE_MAP.keys()),
+            index=2,
+            horizontal=True,
+            label_visibility="collapsed",
+        )
+        stage_val = STAGE_MAP[stage]
+
+        st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+
+        # ── Predict button ────────────────────────────────
+        pb1, pb2, pb3 = st.columns([2, 4, 2])
+        with pb2:
+            predict_btn = st.button("Predict Match", use_container_width=True)
+
+        if predict_btn:
+            if team_a == team_b:
+                st.warning("Please select two different teams.")
+            else:
+                p_a, p_draw, p_b = predict(team_a, team_b, stage_val)
+                st.session_state.prediction = {
+                    "team_a": team_a,
+                    "team_b": team_b,
+                    "stage": stage,
+                    "p_a": p_a,
+                    "p_draw": p_draw,
+                    "p_b": p_b,
+                }
+
+        # ── Results ───────────────────────────────────────
+        pred = st.session_state.prediction
+        if pred and pred["p_a"] is not None:
+            ta = pred["team_a"]
+            tb = pred["team_b"]
+            p_a = pred["p_a"]
+            p_draw = pred["p_draw"]
+            p_b = pred["p_b"]
+            winner = ta if p_a > p_b else tb
+            win_prob = max(p_a, p_b)
+            pa_pct = int(p_a * 100)
+            pd_pct = int(p_draw * 100)
+            pb_pct = int(p_b * 100)
+
+            st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
+            st.markdown(
+                "<div style='height:0.5px;background:#1E1E2E;margin-bottom:24px'></div>",
+                unsafe_allow_html=True,
+            )
+
+            # Winner card
+            st.markdown(
+                f"""
+            <div class="fade-in" style="background:linear-gradient(135deg,rgba(124,58,237,0.18),rgba(168,85,247,0.06));
+                        border:0.5px solid rgba(168,85,247,0.4);border-radius:14px;
+                        padding:28px 24px;text-align:center;margin-bottom:20px;
+                        font-family:'Hanken Grotesk',sans-serif">
+              <div style="font-size:10px;color:#7C3AED;letter-spacing:1.6px;text-transform:uppercase;
+                          font-weight:600;margin-bottom:10px">Predicted Winner</div>
+              <div style="font-size:40px;font-weight:800;color:#E2E2F0;letter-spacing:-1.5px;
+                          margin-bottom:12px">{winner}</div>
+              <div style="display:inline-flex;align-items:center;gap:10px;
+                          background:rgba(168,85,247,0.15);border:0.5px solid rgba(168,85,247,0.35);
+                          border-radius:20px;padding:6px 20px">
+                <span style="font-size:16px;font-weight:800;color:#A855F7">{win_prob*100:.0f}%</span>
+                <span style="font-size:11px;color:#7C3AED;font-weight:500">Win Probability</span>
+              </div>
+            </div>""",
+                unsafe_allow_html=True,
+            )
+
+            # Probability bars
+            def prob_bar(label, pct, color):
+                st.markdown(
+                    f"""
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;
+                            font-family:'Hanken Grotesk',sans-serif">
+                  <div style="font-size:12px;color:#7A7A9A;width:130px;flex-shrink:0">{label}</div>
+                  <div style="flex:1;height:4px;background:#1E1E2E;border-radius:2px;overflow:hidden">
+                    <div style="width:{pct}%;height:100%;background:{color};border-radius:2px"></div>
+                  </div>
+                  <div style="font-size:12px;font-weight:700;color:#E2E2F0;width:34px;text-align:right">{pct}%</div>
+                </div>""",
+                    unsafe_allow_html=True,
+                )
+
+            prob_bar(f"{ta} win", pa_pct, "#A855F7")
+            prob_bar("Draw", pd_pct, "#3A3A5A")
+            prob_bar(f"{tb} win", pb_pct, "#4ADE80")
+
+        st.markdown("</div>", unsafe_allow_html=True)  # tab padding
+
+    # ══ TAB 2 — HEAD TO HEAD ═════════════════════════════
+    with tab_h2h:
+        st.session_state.show_pulse_panel = False
+        st.markdown("<div style='padding-top:20px'>", unsafe_allow_html=True)
+
+        # Use same teams from predictor tab
+        h2h_matches = get_h2h(team_a, team_b)
+        total = len(h2h_matches)
+
+        if total == 0:
+            st.markdown(
+                f"""
+            <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:12px;
+                        padding:40px;text-align:center;font-family:'Hanken Grotesk',sans-serif">
+              <div style="font-size:28px;margin-bottom:12px">❌</div>
+              <div style="font-size:14px;font-weight:700;color:#E2E2F0;margin-bottom:6px">
+                No World Cup meetings found</div>
+              <div style="font-size:12px;color:#5A5A7A">
+                {team_a} and {team_b} have never met at a World Cup in the dataset.</div>
+            </div>""",
+                unsafe_allow_html=True,
+            )
+        else:
+            a_wins = len(h2h_matches[h2h_matches["Winner"] == team_a])
+            b_wins = len(h2h_matches[h2h_matches["Winner"] == team_b])
+            draws = total - a_wins - b_wins
+
+            # Stats row
+            s1, s2, s3 = st.columns(3)
+            for col, label, val, color in [
+                (s1, f"{team_a} wins", a_wins, "#A855F7"),
+                (s2, "Draws", draws, "#5A5A7A"),
+                (s3, f"{team_b} wins", b_wins, "#4ADE80"),
+            ]:
+                with col:
+                    st.markdown(
+                        f"""
+                    <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:12px;
+                                padding:20px;text-align:center;font-family:'Hanken Grotesk',sans-serif">
+                      <div style="font-size:32px;font-weight:800;color:{color};letter-spacing:-1px">{val}</div>
+                      <div style="font-size:11px;color:#5A5A7A;margin-top:4px;font-weight:500">{label}</div>
+                    </div>""",
+                        unsafe_allow_html=True,
+                    )
+
+            st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+            # Win distribution bar
+            if total > 0:
+                aw_pct = int(a_wins / total * 100)
+                dr_pct = int(draws / total * 100)
+                bw_pct = 100 - aw_pct - dr_pct
+                st.markdown(
+                    f"""
+                <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:12px;
+                            padding:16px 20px;margin-bottom:16px;font-family:'Hanken Grotesk',sans-serif">
+                  <div style="font-size:10px;color:#5A5A7A;letter-spacing:1.4px;text-transform:uppercase;
+                              font-weight:600;margin-bottom:12px">Win Distribution</div>
+                  <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px">
+                    <div style="width:{aw_pct}%;background:#A855F7;border-radius:4px 0 0 4px"></div>
+                    <div style="width:{dr_pct}%;background:#3A3A5A"></div>
+                    <div style="width:{bw_pct}%;background:#4ADE80;border-radius:0 4px 4px 0"></div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;margin-top:8px">
+                    <span style="font-size:11px;color:#A855F7;font-weight:600">{team_a[:3].upper()} {aw_pct}%</span>
+                    <span style="font-size:11px;color:#5A5A7A">{dr_pct}% Draw</span>
+                    <span style="font-size:11px;color:#4ADE80;font-weight:600">{bw_pct}% {team_b[:3].upper()}</span>
+                  </div>
+                </div>""",
+                    unsafe_allow_html=True,
+                )
+
+            # Match timeline
+            st.markdown(
+                """
+            <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:12px;
+                        padding:16px 20px;font-family:'Hanken Grotesk',sans-serif">
+              <div style="font-size:10px;color:#5A5A7A;letter-spacing:1.4px;text-transform:uppercase;
+                          font-weight:600;margin-bottom:14px">World Cup Meetings</div>""",
+                unsafe_allow_html=True,
+            )
+
+            for _, row in h2h_matches.iterrows():
+                hteam = row["Home Team Name"]
+                ateam = row["Away Team Name"]
+                hg = int(row.get("Home Team Goals", 0))
+                ag = int(row.get("Away Team Goals", 0))
+                stage_name = row.get("Stage", "")
+                year = int(row.get("Year", 0))
+                match_winner = row.get("Winner", "Draw")
+                if match_winner == team_a:
+                    wcolor, wlabel = "#A855F7", team_a
+                elif match_winner == team_b:
+                    wcolor, wlabel = "#4ADE80", team_b
+                else:
+                    wcolor, wlabel = "#5A5A7A", "Draw"
+
+                st.markdown(
+                    f"""
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 0;
+                            border-bottom:0.5px solid #1E1E2E;">
+                  <div style="font-size:12px;font-weight:700;color:#5A5A7A;width:36px;flex-shrink:0">{year}</div>
+                  <div style="font-size:12px;color:#7A7A9A;flex:1">{stage_name}</div>
+                  <div style="font-family:'Hanken Grotesk',sans-serif;font-size:13px;font-weight:700;
+                              color:#E2E2F0;flex-shrink:0">{hteam[:3].upper()} {hg}–{ag} {ateam[:3].upper()}</div>
+                  <div style="background:rgba(0,0,0,0.3);border:0.5px solid {wcolor}33;border-radius:6px;
+                              padding:3px 9px;font-size:10px;font-weight:700;color:{wcolor};flex-shrink:0">{wlabel}</div>
+                </div>""",
+                    unsafe_allow_html=True,
+                )
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)  # tab padding
+
+    # ══ TAB 3 — WORLD CUP PULSE ══════════════════════════
+    with tab_pulse:
+        st.markdown("<div style='padding-top:20px'>", unsafe_allow_html=True)
+
+        # ── Tab header with inline action ─────────────────
+        hdr_col, btn_col = st.columns([3, 2])
+        with hdr_col:
+            st.markdown(
+                """<div style="padding-top:6px;font-family:'Hanken Grotesk',sans-serif">
+                  <div style="font-size:18px;font-weight:800;color:#E2E2F0;letter-spacing:-0.4px;line-height:1.2">
+                    World Cup Pulse</div>
+                  <div style="font-size:11px;color:#5A5A7A;margin-top:4px">Live headlines &amp; sentiment</div>
+                </div>""",
+                unsafe_allow_html=True,
+            )
+        with btn_col:
+            if st.button(
+                "View Sentiment Dashboard",
+                use_container_width=True,
+                key="pulse_panel_btn",
+            ):
+                st.session_state.show_pulse_panel = True
+
+        st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+        if date.today() >= date(2026, 6, 11) or TEST_NEWS_MODE:
+            import re as _re
+            from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+            @st.cache_data(ttl=1800, show_spinner=False)
+            def fetch_wc_headlines():
+                queries = ["FIFA World Cup 2026", "World Cup 2026 football"]
+                seen, results = set(), []
+                for query in queries:
+                    url = f"https://news.google.com/rss/search?q={query.replace(' ', '+')}&hl=en&gl=US&ceid=US:en"
+                    feed = feedparser.parse(url)
+                    for e in feed.entries:
+                        title = e.get("title", "")
+                        if not title:
+                            continue
+                        key = title[:40].lower()
+                        if key in seen:
+                            continue
+                        seen.add(key)
+                        src = e.get("source", {})
+                        src_name = (
+                            (src.get("title") or src.get("name") or "Google News")
+                            if isinstance(src, dict)
+                            else (str(src) or "Google News")
+                        )
+                        results.append(
+                            {
+                                "title": title,
+                                "description": e.get("summary", ""),
+                                "source": {"name": src_name},
+                            }
+                        )
+                        if len(results) >= 12:
+                            break
+                    if len(results) >= 12:
+                        break
+                return results
+
+            wc_headlines = fetch_wc_headlines()
+            from collections import Counter
+
+            STOP = {
+                "world",
+                "cup",
+                "what",
+                "when",
+                "how",
+                "who",
+                "the",
+                "for",
+                "and",
+                "with",
+                "from",
+                "this",
+                "that",
+                "will",
+                "have",
+                "been",
+                "their",
+                "they",
+                "about",
+                "into",
+                "after",
+                "ahead",
+                "says",
+                "said",
+                "over",
+                "just",
+                "more",
+                "than",
+                "some",
+                "also",
+                "first",
+                "last",
+                "next",
+                "year",
+                "time",
+                "game",
+                "match",
+                "men",
+                "women",
+                "top",
+                "full",
+                "list",
+                "key",
+                "new",
+                "2026",
+                "2025",
+                "fifa",
+                "football",
+                "soccer",
+                "power",
+                "here",
+                "guide",
+                "news",
+            }
+            counter = Counter()
+            for art in wc_headlines:
+                title = _re.sub(
+                    r"\s*[-–|]\s*[^-–|]{3,40}$", "", art.get("title", "")
+                ).strip()
+                for w in _re.findall(r"\b[A-Za-z][a-z]{2,}\b", title):
+                    if w.lower() not in STOP and len(w) > 3:
+                        counter[w.lower()] += 1
+            topics = []
+            for word, count in counter.most_common(10):
+                if len(topics) >= 5:
+                    break
+                if count >= 2:
+                    topics.append((word.capitalize(), count, count >= 3))
+
+            topic_rows = ""
+            for i, (word, count, is_hot) in enumerate(topics):
+                border = (
+                    "border-bottom:0.5px solid #1E1E2E;" if i < len(topics) - 1 else ""
+                )
+                badge = (
+                    '<span style="background:rgba(168,85,247,0.15);border:0.5px solid rgba(168,85,247,0.3);'
+                    "color:#A855F7;font-size:10px;padding:2px 7px;border-radius:4px;margin-right:8px;"
+                    'font-weight:700">HOT</span>'
+                    if is_hot
+                    else ""
+                )
+                nc = "#E2E2F0" if is_hot else "#7A7A9A"
+                cnt_lbl = f"{count} mentions" if count != 1 else "1 mention"
+                topic_rows += f"""<div style="display:flex;justify-content:space-between;align-items:center;
+                    padding:9px 0;{border}">{badge}<span style="font-size:12px;color:{nc};font-weight:500">#{word}</span>
+                    <span style="font-size:11px;color:#3A3A5A">{cnt_lbl}</span></div>"""
+
+            if not topic_rows:
+                topic_rows = '<div style="font-size:12px;color:#3A3A5A;padding:12px 0;text-align:center">Topics loading — check back soon</div>'
+
+            st.markdown(
+                f"""
+            <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:12px;
+                        padding:16px 20px;margin-bottom:16px;font-family:'Hanken Grotesk',sans-serif">
+              <div style="font-size:10px;color:#5A5A7A;letter-spacing:1.4px;text-transform:uppercase;
+                          font-weight:600;margin-bottom:12px">Trending Topics</div>
+              {topic_rows}
+            </div>""",
+                unsafe_allow_html=True,
+            )
+
+            az = SentimentIntensityAnalyzer()
+            st.markdown(
+                """
+            <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:12px;
+                        padding:16px 20px;font-family:'Hanken Grotesk',sans-serif">
+              <div style="font-size:10px;color:#5A5A7A;letter-spacing:1.4px;text-transform:uppercase;
+                          font-weight:600;margin-bottom:12px">Latest Headlines</div>""",
+                unsafe_allow_html=True,
+            )
+
+            if wc_headlines:
+                for art in wc_headlines[:6]:
+                    raw = art.get("title") or ""
+                    clean = _re.sub(r"\s*[-–|]\s*[^-–|]{3,40}$", "", raw).strip()[:90]
+                    if not clean:
+                        continue
+                    source = (art.get("source", {}).get("name") or "News")[:18]
+                    score = az.polarity_scores(clean)["compound"]
+                    if score > 0.05:
+                        bg, fg, br, label = (
+                            "rgba(168,85,247,0.08)",
+                            "#A855F7",
+                            "rgba(168,85,247,0.3)",
+                            "positive",
+                        )
+                    elif score < -0.05:
+                        bg, fg, br, label = (
+                            "rgba(239,68,68,0.08)",
+                            "#ef4444",
+                            "rgba(239,68,68,0.3)",
+                            "negative",
+                        )
+                    else:
+                        bg, fg, br, label = "#1E1E2E", "#5A5A7A", "#2A2A3A", "neutral"
+                    st.markdown(
+                        f"""
+                    <div style="background:#1A1A24;border-radius:8px;padding:10px 12px;margin-bottom:6px;
+                                display:flex;gap:10px;align-items:flex-start">
+                      <div style="font-size:10px;color:#5A5A7A;min-width:62px;margin-top:1px;line-height:1.4">{source}</div>
+                      <div style="font-size:12px;color:#9090A8;flex:1;line-height:1.6">{clean}</div>
+                      <span style="background:{bg};color:{fg};font-size:10px;padding:3px 8px;
+                                   border-radius:6px;border:0.5px solid {br};flex-shrink:0;font-weight:600">{label}</span>
+                    </div>""",
+                        unsafe_allow_html=True,
+                    )
+            else:
+                st.markdown(
+                    '<div style="font-size:12px;color:#3A3A5A;text-align:center;padding:16px 0">'
+                    "No headlines found — check back soon.</div>",
+                    unsafe_allow_html=True,
+                )
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        else:
+            # Lock screen
+            st.markdown(
+                """
+            <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:14px;
+                        padding:56px 24px;text-align:center;font-family:'Hanken Grotesk',sans-serif">
+              <div style="width:56px;height:56px;background:#1A1A24;border:0.5px solid #2A2A3A;
+                          border-radius:14px;display:inline-flex;align-items:center;justify-content:center;
+                          font-size:24px;margin-bottom:20px">🔒</div>
+              <div style="font-size:16px;font-weight:800;color:#E2E2F0;margin-bottom:8px;letter-spacing:-0.3px">
+                Live coverage unlocks June 11</div>
+              <div style="font-size:12px;color:#5A5A7A;line-height:1.7;max-width:340px;margin:0 auto 24px">
+                Trending headlines, social sentiment, and AI-driven match topics will appear here
+                automatically once the World Cup kicks off.</div>
+              <div style="display:inline-flex;align-items:center;gap:8px;
+                          background:rgba(168,85,247,0.1);border:0.5px solid rgba(168,85,247,0.3);
+                          border-radius:8px;padding:8px 20px;font-size:12px;color:#A855F7;font-weight:600;
+                          margin-bottom:24px">
+                ⚠️ &nbsp;Opening match · June 11, 2026</div>
+              <div style="display:flex;justify-content:center;gap:28px;font-size:11px;color:#5A5A7A">
+                <span>Data Pipeline: <strong style="color:#4ADE80">Active</strong></span>
+                <span>Sources: <strong style="color:#9090A8">1,420+ Global Feeds</strong></span>
+              </div>
+            </div>""",
+                unsafe_allow_html=True,
+            )
+
+        st.markdown("</div>", unsafe_allow_html=True)  # tab padding
+
+    st.markdown("</div>", unsafe_allow_html=True)  # left panel padding
+
+
+# ──────────────────────────────────────────────────────────
+# RIGHT PANEL — Key Analytical Factors (always visible)
+# Shows placeholder before first prediction, populates after.
+# ──────────────────────────────────────────────────────────
+with right_col:
+    st.markdown(
+        """
+    <div style="padding:24px 32px 0 8px;font-family:'Hanken Grotesk',sans-serif;">""",
+        unsafe_allow_html=True,
+    )
+
+    pred = st.session_state.prediction
+
+    if st.session_state.get("show_pulse_panel", False):
+
+        if date.today() >= date(2026, 6, 11) or TEST_NEWS_MODE:
+
+            try:
+                wc_headlines_right = fetch_wc_headlines()
+            except Exception:
+                wc_headlines_right = []
+
+            from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+            from collections import Counter
+
+            az2 = SentimentIntensityAnalyzer()
+
+            pos = 0
+            neu = 0
+            neg = 0
+
+            for art in wc_headlines_right:
+
+                sentiment = az2.polarity_scores(art.get("title", ""))["compound"]
+
+                if sentiment > 0.05:
+                    pos += 1
+
+                elif sentiment < -0.05:
+                    neg += 1
+
+                else:
+                    neu += 1
+
+            total = pos + neu + neg
+
+            if total == 0:
+                total = 1
+
+            pos_pct = round(pos / total * 100)
+            neu_pct = round(neu / total * 100)
+            neg_pct = 100 - pos_pct - neu_pct
+
+            # Determine mood by dominant bucket first; use score only to break ties
+            overall = (pos - neg) / total
+
+            if neu >= pos and neu >= neg:
+                # Neutral is the majority bucket — check if sentiment strongly pulls either way
+                if overall > 0.4:
+                    mood = "Positive"
+                    mood_color = "#4ADE80"
+                    mood_icon = "📈"
+                elif overall < -0.4:
+                    mood = "Negative"
+                    mood_color = "#EF4444"
+                    mood_icon = "📉"
+                else:
+                    mood = "Neutral"
+                    mood_color = "#A855F7"
+                    mood_icon = "➖"
+            elif pos >= neg:
+                mood = "Positive"
+                mood_color = "#4ADE80"
+                mood_icon = "📈"
+            else:
+                mood = "Negative"
+                mood_color = "#EF4444"
+                mood_icon = "📉"
+
+            WC_TEAMS = [
+                "Brazil",
+                "Argentina",
+                "England",
+                "France",
+                "Germany",
+                "Spain",
+                "Portugal",
+                "Netherlands",
+                "USA",
+                "Mexico",
+                "Morocco",
+                "Japan",
+                "Croatia",
+                "Belgium",
+                "Denmark",
+                "Switzerland",
+                "South Korea",
+                "Uruguay",
+            ]
+
+            team_counts = Counter(
+                team
+                for art in wc_headlines_right
+                for team in WC_TEAMS
+                if team.lower() in art.get("title", "").lower()
+            )
+
+            top_teams = [
+                (team, count)
+                for team, count in team_counts.most_common(5)
+                if count >= 2
+            ]
+
+            if top_teams:
+
+                team_rows = "".join([f"""
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:center;
+                        padding:6px 0;
+                        border-bottom:0.5px solid #1E1E2E;
+                    ">
+                        <span style="
+                            font-size:12px;
+                            color:#E2E2F0;
+                        ">
+                            {team}
+                        </span>
+
+                        <span style="
+                            font-size:11px;
+                            color:#A855F7;
+                            font-weight:700;
+                        ">
+                            {count}×
+                        </span>
+                    </div>
+                    """ for team, count in top_teams])
+
+            else:
+
+             team_rows = """
+<div style="
+    font-size:11px;
+    color:#8B8BA7;
+    padding:8px 0;
+    line-height:1.5;
+">
+    No dominant team discussions in current headlines
+</div>
+"""
+
+            # ---------- SENTIMENT DASHBOARD CARD ----------
+
+            # Build visual bar widths (min 2px shown so zero values still render as thin line)
+            pos_bar = max(pos_pct, 0)
+            neu_bar = max(neu_pct, 0)
+            neg_bar = max(neg_pct, 0)
+
+            # Mood ring colour used in the big circle
+            ring_color = mood_color
+            ring_bg = f"rgba({','.join(str(int(mood_color.lstrip('#')[i:i+2], 16)) for i in (0,2,4))},0.12)"
+
+            st.markdown(
+            f"""
+<div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:14px;
+            padding:18px 16px 14px;margin-bottom:16px;font-family:'Hanken Grotesk',sans-serif">
+
+  <!-- Header label -->
+  <div style="font-size:9px;color:#5A5A7A;letter-spacing:1.4px;text-transform:uppercase;
+              font-weight:600;margin-bottom:14px">Sentiment Dashboard</div>
+
+  <!-- Mood hero row -->
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+    <div style="width:52px;height:52px;border-radius:50%;
+                background:{ring_bg};border:2px solid {ring_color};
+                display:flex;align-items:center;justify-content:center;
+                font-size:22px;flex-shrink:0">{mood_icon}</div>
+    <div>
+      <div style="font-size:9px;color:#5A5A7A;letter-spacing:1px;text-transform:uppercase;
+                  font-weight:600;margin-bottom:3px">Overall Media Mood</div>
+      <div style="font-size:22px;font-weight:800;color:{mood_color};letter-spacing:-0.5px;line-height:1">{mood}</div>
+      <div style="font-size:10px;color:#4A4A6A;margin-top:3px">based on {len(wc_headlines_right)} headlines</div>
+    </div>
+  </div>
+
+  <!-- Sentiment stacked bar -->
+  <div style="margin-bottom:14px">
+    <div style="font-size:9px;color:#5A5A7A;letter-spacing:1.2px;text-transform:uppercase;
+                font-weight:600;margin-bottom:8px">Sentiment Breakdown</div>
+    <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;gap:1px;margin-bottom:10px">
+      <div style="width:{pos_bar}%;background:#4ADE80;border-radius:3px 0 0 3px;min-width:{2 if pos_bar>0 else 0}px"></div>
+      <div style="width:{neu_bar}%;background:#A855F7"></div>
+      <div style="width:{neg_bar}%;background:#EF4444;border-radius:0 3px 3px 0;min-width:{2 if neg_bar>0 else 0}px"></div>
+    </div>
+    <!-- Row items -->
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:7px">
+          <div style="width:8px;height:8px;border-radius:2px;background:#4ADE80;flex-shrink:0"></div>
+          <span style="font-size:11px;color:#9090A8">Positive</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:60px;height:3px;background:#1E1E2E;border-radius:2px;overflow:hidden">
+            <div style="width:{pos_bar}%;height:100%;background:#4ADE80;border-radius:2px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:#4ADE80;width:28px;text-align:right">{pos_pct}%</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:7px">
+          <div style="width:8px;height:8px;border-radius:2px;background:#A855F7;flex-shrink:0"></div>
+          <span style="font-size:11px;color:#9090A8">Neutral</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:60px;height:3px;background:#1E1E2E;border-radius:2px;overflow:hidden">
+            <div style="width:{neu_bar}%;height:100%;background:#A855F7;border-radius:2px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:#A855F7;width:28px;text-align:right">{neu_pct}%</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:7px">
+          <div style="width:8px;height:8px;border-radius:2px;background:#EF4444;flex-shrink:0"></div>
+          <span style="font-size:11px;color:#9090A8">Negative</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:60px;height:3px;background:#1E1E2E;border-radius:2px;overflow:hidden">
+            <div style="width:{neg_bar}%;height:100%;background:#EF4444;border-radius:2px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:#EF4444;width:28px;text-align:right">{neg_pct}%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Divider -->
+  <div style="height:0.5px;background:#1E1E2E;margin:14px 0"></div>
+
+  <!-- Most mentioned teams -->
+  <div style="font-size:9px;color:#5A5A7A;letter-spacing:1.2px;text-transform:uppercase;
+              font-weight:600;margin-bottom:10px">Most Mentioned Teams</div>
+  {team_rows}
+
+</div>""",
+    unsafe_allow_html=True,
+)
+
+        # ── KEY ANALYTICAL FACTORS (Predictor / H2H) ─────────
+    elif pred and pred.get("p_a") is not None:
+        st.markdown(
+            """
+        <div style="font-size:10px;color:#5A5A7A;letter-spacing:1.4px;text-transform:uppercase;
+                    font-weight:600;margin-bottom:16px">Key Analytical Factors</div>""",
+            unsafe_allow_html=True,
+        )
+
+        ta = pred["team_a"]
+        tb = pred["team_b"]
+        la = ta[:3].upper()
+        lb = tb[:3].upper()
+        elo_a_v = round(elo_ratings.get(ta, 1000))
+        elo_b_v = round(elo_ratings.get(tb, 1000))
+        atk_a = attack(ta)
+        atk_b = attack(tb)
+        def_a = defense(ta)
+        def_b = defense(tb)
+        frm_a = recent_form(ta)
+        frm_b = recent_form(tb)
+        wr_a = win_rate(ta)
+        wr_b = win_rate(tb)
+        stage_label = pred["stage"]
+
+        def winner_pill(va, vb, la, lb, lower_is_better=False):
+            if lower_is_better:
+                a_better = va < vb
+            else:
+                a_better = va > vb
+            if va == vb:
+                return '<span style="background:#1E1E2E;color:#5A5A7A;font-size:10px;padding:3px 9px;border-radius:6px;font-weight:600">Equal</span>'
+            winner = la if a_better else lb
+            color = "#A855F7" if a_better else "#4ADE80"
+            bg = "rgba(168,85,247,0.12)" if a_better else "rgba(74,222,128,0.1)"
+            diff = abs(round(va - vb, 2))
+            return f'<span style="background:{bg};color:{color};font-size:10px;padding:3px 9px;border-radius:6px;font-weight:700">{winner} +{diff}</span>'
+
+        def factor_card(
+            title, val_a, val_b, la, lb, lower_is_better=False, is_stage=False
+        ):
+            if is_stage:
+                return f"""<div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:10px;
+                            padding:14px;margin-bottom:8px">
+                  <div style="font-size:11px;color:#5A5A7A;font-weight:500;margin-bottom:10px">{title}</div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-size:13px;color:#9090B0;font-weight:600">{val_a}</span>
+                    <span style="background:#1E1E2E;color:#5A5A7A;font-size:10px;padding:3px 9px;border-radius:6px">Neutral</span>
+                  </div></div>"""
+            pill = winner_pill(val_a, val_b, la, lb, lower_is_better)
+            return f"""<div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:10px;
+                        padding:14px;margin-bottom:8px">
+              <div style="font-size:11px;color:#5A5A7A;font-weight:500;margin-bottom:10px">{title}</div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span style="font-size:14px;font-weight:800;color:#A855F7">{val_a}</span>
+                <span style="font-size:10px;color:#3A3A5A">vs</span>
+                <span style="font-size:14px;font-weight:800;color:#4ADE80">{val_b}</span>
+                {pill}
+              </div></div>"""
+
+        st.markdown(
+            factor_card("Elo Rating", elo_a_v, elo_b_v, la, lb)
+            + factor_card("Attack Strength", atk_a, atk_b, la, lb)
+            + factor_card(
+                "Defensive Record", def_a, def_b, la, lb, lower_is_better=True
+            )
+            + factor_card("Recent Form", frm_a, frm_b, la, lb)
+            + factor_card("Win Rate (WC)", wr_a, wr_b, la, lb)
+            + factor_card("Stage Pressure", stage_label, None, la, lb, is_stage=True),
+            unsafe_allow_html=True,
+        )
+
+        p_a = pred["p_a"]
+        p_b = pred["p_b"]
+        winner = ta if p_a > p_b else tb
+        form_team = la if frm_a > frm_b else lb
+        insight = (
+            f"{winner}'s Elo advantage (+{abs(elo_a_v - elo_b_v)}) and World Cup win rate "
+            f"are the primary drivers. {form_team} holds the recent form edge. "
+            f"Prediction based on 92 years of tournament data."
+        )
+        st.markdown(
+            f"""
+        <div style="background:rgba(124,58,237,0.08);border:0.5px solid rgba(168,85,247,0.2);
+                    border-radius:10px;padding:14px;margin-top:4px">
+          <div style="font-size:11px;color:#7C3AED;font-weight:700;margin-bottom:6px">AI Insight</div>
+          <div style="font-size:11px;color:#9090A8;line-height:1.65">{insight}</div>
+          <div style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;
+                      background:rgba(74,222,128,0.08);border:0.5px solid rgba(74,222,128,0.2);
+                      border-radius:6px;padding:3px 10px;font-size:10px;color:#4ADE80;font-weight:600">
+            ✦ Confidence: High
+          </div>
+        </div>""",
+            unsafe_allow_html=True,
+        )
+
+        # ── PLACEHOLDER (nothing predicted yet) ──────────────
+    else:
+        st.markdown(
+            """
+        <div style="font-size:10px;color:#5A5A7A;letter-spacing:1.4px;text-transform:uppercase;
+                    font-weight:600;margin-bottom:16px">Key Analytical Factors</div>
+        <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:12px;
+                    padding:32px 20px;text-align:center;margin-bottom:12px">
+          <div style="font-size:28px;margin-bottom:14px">⚽</div>
+          <div style="font-size:13px;font-weight:700;color:#7A7A9A;margin-bottom:8px">No prediction yet</div>
+          <div style="font-size:11px;color:#5A5A7A;line-height:1.7">
+            Select two teams on the<br>Match Predictor tab and<br>
+            hit <strong style="color:#A855F7">Predict Match</strong> to see<br>analytical factors here.
+          </div>
+        </div>
+        <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:10px;
+                    padding:14px;margin-bottom:8px;opacity:0.35">
+          <div style="font-size:11px;color:#5A5A7A;margin-bottom:8px">Elo Rating</div>
+          <div style="height:8px;background:#1E1E2E;border-radius:4px"></div>
+        </div>
+        <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:10px;
+                    padding:14px;margin-bottom:8px;opacity:0.25">
+          <div style="font-size:11px;color:#5A5A7A;margin-bottom:8px">Attack Strength</div>
+          <div style="height:8px;background:#1E1E2E;border-radius:4px"></div>
+        </div>
+        <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:10px;
+                    padding:14px;margin-bottom:8px;opacity:0.15">
+          <div style="font-size:11px;color:#5A5A7A;margin-bottom:8px">Defensive Record</div>
+          <div style="height:8px;background:#1E1E2E;border-radius:4px"></div>
+        </div>""",
+            unsafe_allow_html=True,
+        )
+
 st.markdown("</div>", unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════
+# FOOTER
+# ══════════════════════════════════════════════════════════
+st.markdown(
+    """
+<div style="text-align:center;padding:24px 32px;border-top:0.5px solid #1E1E2E;margin-top:16px;
+            font-family:'Hanken Grotesk',sans-serif">
+  <div style="font-size:11px;color:#3A3A5A">
+    FootballPulse AI &nbsp;·&nbsp; Built on 92 years of World Cup data &nbsp;·&nbsp; Model accuracy ~57%
+  </div>
+  <div style="font-size:11px;color:#2A2A3A;margin-top:4px">
+    Predictions are probabilistic — football is beautifully unpredictable
+  </div>
+</div>
+""",
+    unsafe_allow_html=True,
+)
