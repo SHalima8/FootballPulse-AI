@@ -440,7 +440,7 @@ team_options = [t for t in WC2026 if t in all_teams] + [
 #   preview the news/sentiment section right now.
 #   Flip back to False before going live.
 # ══════════════════════════════════════════════════════════
-TEST_NEWS_MODE = True  # ← set False for production
+TEST_NEWS_MODE = False # ← set False for production
 
 # ══════════════════════════════════════════════════════════
 # SESSION STATE
@@ -1024,7 +1024,7 @@ with left_col:
                           background:rgba(168,85,247,0.1);border:0.5px solid rgba(168,85,247,0.3);
                           border-radius:8px;padding:8px 20px;font-size:12px;color:#A855F7;font-weight:600;
                           margin-bottom:24px">
-                ⚠️ &nbsp;Opening match · June 11, 2026</div>
+                 &nbsp;Opening match · June 11, 2026</div>
               <div style="display:flex;justify-content:center;gap:28px;font-size:11px;color:#5A5A7A">
                 <span>Data Pipeline: <strong style="color:#4ADE80">Active</strong></span>
                 <span>Sources: <strong style="color:#9090A8">1,420+ Global Feeds</strong></span>
