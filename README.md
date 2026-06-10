@@ -431,15 +431,14 @@ FootballPulse-AI/
 ## 🖼️ Screenshots
 
 ### Match Prediction Dashboard
-![Dashboard](screenshots/image.png)
+![Dashboard](screenshots/dashboard.png)
 
 
-### Tournament Simulator
-![Simulator](screenshots/image-1.png)
+### Head-To-Head Analysis
+![Simulator](screenshots/H2H_analysis.png)
 
-### Monte Carlo Championship Analysis
-![Monte-Carlo](screenshots/image-2.png)
-![MOnte carlo](screenshots/image-3.png)
+### Live News Coverage and Sentiment Analysis
+![Sentiment Analysis](screenshots/Live_news_Coverage.png)
 
 ## 📚 What I Learned
 
