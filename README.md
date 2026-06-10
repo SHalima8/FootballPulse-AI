@@ -15,8 +15,8 @@ Built using **92 years of World Cup history (1930–2022)**, the project combine
 
 ## 🚀 Quick Links
 
-- **Live Demo:** Coming soon
-- **GitHub Repository:** This repository
+- **Live Demo:** https://footballpulse-ai.streamlit.app/
+- **GitHub Repository:** https://github.com/SHalima8/FootballPulse-AI
 - **Notebook Walkthrough:** See `notebooks/` directory for detailed analysis
 
 ---
@@ -47,7 +47,7 @@ Shows the key factors influencing the prediction, including Elo ratings, attacki
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/FootballPulse-AI.git
+git clone https://github.com/SHalima8/FootballPulse-AI
 cd FootballPulse-AI
 ```
 
@@ -478,7 +478,7 @@ Contributions are welcome! Here's how you can help:
 
 1. **Fork the repository**
 ```bash
-git clone https://github.com/yourusername/FootballPulse-AI.git
+git clone https://github.com/SHalima8/FootballPulse-AI
 ```
 
 2. **Create a feature branch**
@@ -536,11 +536,6 @@ A: Yes! The framework can be adapted. You'd need to:
 
 ---
 
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
----
 
 ## 👩‍💻 Author
 
@@ -557,9 +552,9 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - AI Product Development
 
 ### Connect
-- GitHub: [@your-github](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
-- Email: your.email@example.com
+- GitHub: [@SHalima8](https://github.com/SHalima8)
+- LinkedIn: [Your LinkedIn](https://www.linkedin.com/in/sadia--halima/)
+- Email: sadiahalima2006@gmail.com
 
 ---
 
