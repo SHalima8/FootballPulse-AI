@@ -1,24 +1,29 @@
 # ⚽ FootballPulse AI
 
-### AI-Powered FIFA World Cup 2026 Match Prediction & Tournament Intelligence Platform
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Streamlit](https://img.shields.io/badge/Streamlit-App-red.svg)](https://streamlit.io/)
+[![Machine Learning](https://img.shields.io/badge/ML-Scikit%2DLearn%2C%20XGBoost-orange.svg)](https://scikit-learn.org/)
 
-FootballPulse AI is an end-to-end machine learning project that predicts FIFA World Cup match outcomes, simulates entire tournaments, and tracks live World Cup news and sentiment in a single interactive dashboard.
+### 🎯 AI-Powered FIFA World Cup Match Prediction & Tournament Intelligence Platform
 
-Built using 92 years of World Cup history (1930–2022), the project combines feature engineering, Elo ratings, predictive modeling, Monte Carlo simulation, and real-time football intelligence to provide data-driven insights for World Cup matches.
+**FootballPulse AI** is an end-to-end machine learning project that predicts FIFA World Cup match outcomes and tracks live World Cup news and sentiment in a single interactive dashboard.
+
+Built using **92 years of World Cup history (1930–2022)**, the project combines feature engineering, Elo ratings, predictive modeling, and real-time football intelligence to provide data-driven insights for World Cup matches.
 
 ---
 
-## 🚀 Live Demo
+## 🚀 Quick Links
 
-**Streamlit App:** [Add Link]
-
-**GitHub Repository:** [Add Link]
+- **Live Demo:** Coming soon
+- **GitHub Repository:** This repository
+- **Notebook Walkthrough:** See `notebooks/` directory for detailed analysis
 
 ---
 
 ## 🎯 Project Overview
 
-FootballPulse AI answers three questions:
+FootballPulse AI answers two key questions:
 
 ### 1. Who is most likely to win a match?
 
@@ -28,9 +33,118 @@ Predicts win, draw, and loss probabilities for any World Cup matchup.
 
 Shows the key factors influencing the prediction, including Elo ratings, attacking strength, defensive strength, and recent form.
 
-### 3. What could happen across the entire tournament?
+---
 
-Simulates the complete FIFA World Cup 2026 tournament and estimates championship probabilities using Monte Carlo simulations.
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Python 3.8 or higher
+- pip or conda package manager
+- Git
+
+### Installation
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/yourusername/FootballPulse-AI.git
+cd FootballPulse-AI
+```
+
+2. **Create a virtual environment** (recommended)
+```bash
+# Using venv
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Or using conda
+conda create -n football-pulse python=3.8
+conda activate football-pulse
+```
+
+3. **Install dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+4. **Set up environment variables** (optional, for news API features)
+```bash
+# Create a .env file in the project root
+touch .env
+# Add your API keys if using NewsAPI features
+# NEWSAPI_KEY=your_api_key_here
+```
+
+### Quick Start
+
+**Run the Streamlit application:**
+```bash
+streamlit run src/streamlit_app.py
+```
+
+The app will open in your default browser at `http://localhost:8501`
+
+**Train the model:**
+```bash
+python src/train_model.py
+```
+
+**Make predictions:**
+```bash
+python src/predict.py
+```
+
+---
+
+## 📖 Usage
+
+### Interactive Dashboard
+
+The Streamlit app provides the following features:
+
+1. **Match Prediction** - Select two teams and get win/draw/loss probabilities
+2. **News & Sentiment** - View trending World Cup topics and news sentiment
+
+### Python API
+
+```python
+import joblib
+import pandas as pd
+
+# Load the trained model
+model = joblib.load('models/random_forest_model.pkl')
+
+# Prepare features (19 features as per feature engineering)
+match_features = pd.DataFrame({...})
+
+# Make prediction
+prediction = model.predict(match_features)
+probabilities = model.predict_proba(match_features)
+```
+
+---
+
+## 📊 Project Components
+
+### 1. Data Pipeline
+- **Raw data**: Located in `data/raw/`
+  - `Match_2018_2022.csv` - Recent match data
+  - `WorldCupMatches.csv` - Historical matches
+  - `WorldCupPlayers.csv` - Player information
+  - `WorldCups.csv` - Tournament metadata
+
+- **Processed data**: Located in `data/processed/`
+  - `clean_matches.csv` - Cleaned and integrated data
+  - `model_features.csv` - Engineered features ready for modeling
+
+### 2. Notebooks
+- `01_eda.ipynb` - Exploratory Data Analysis
+- `02_featureEngineering.ipynb` - Feature engineering and selection
+
+### 3. Source Code
+- `train_model.py` - Model training pipeline
+- `predict.py` - Prediction module
+- `streamlit_app.py` - Interactive web dashboard
 
 ---
 
@@ -51,27 +165,13 @@ Simulates the complete FIFA World Cup 2026 tournament and estimates championship
 * Recent form comparison
 * Historical performance indicators
 
-### 🏆 Tournament Simulator
+### ⚔️ Head-to-Head Analysis
 
-* Simulates the entire World Cup automatically
-* Generates different outcomes on each run
-* Allows realistic upsets and underdog victories
-* Produces a complete tournament bracket
-
-### 🎲 Monte Carlo Analysis
-
-* Runs 100+ tournament simulations
-* Estimates championship probabilities
-* Identifies likely winners
-* Quantifies uncertainty
-
-### 🌟 Dark Horse Detection
-
-Highlights teams with relatively low expectations but strong tournament-winning potential.
-
-### ⚡ Biggest Upset Tracker
-
-Detects the most surprising result generated during tournament simulation.
+* Historical H2H matchup statistics
+* Past performance between selected teams
+* Win-loss-draw records in direct matchups
+* Tactical insights from previous encounters
+* Comparative strength metrics from H2H history
 
 ### 📰 Match Intelligence Dashboard
 
@@ -79,6 +179,14 @@ Detects the most surprising result generated during tournament simulation.
 * Latest World Cup headlines
 * News sentiment classification
 * Automatic fallback systems for reliable news retrieval
+
+### 🌍 Live Media Sentiment Dashboard
+
+* Real-time sentiment analysis of breaking news
+* Media coverage tracking across multiple sources
+* Overall tournament sentiment visualization
+* Sentiment trends for teams and matches
+* Live headline aggregation with sentiment scoring
 
 ---
 
@@ -290,11 +398,30 @@ These limitations represent opportunities for future improvement.
 FootballPulse-AI/
 │
 ├── data/
+│   ├── raw/
+│   │   ├── Match_2018_2022.csv
+│   │   ├── WorldCupMatches.csv
+│   │   ├── WorldCupPlayers.csv
+│   │   └── WorldCups.csv
+│   └── processed/
+│       ├── clean_matches.csv
+│       └── model_features.csv
+│
 ├── notebooks/
+│   ├── 01_eda.ipynb
+│   └── 02_featureEngineering.ipynb
+│
 ├── src/
+│   ├── streamlit_app.py      # Main interactive dashboard
+│   ├── train_model.py        # Model training pipeline
+│   └── predict.py            # Prediction module
+│
 ├── models/
-├── app/
+│   └── (trained model artifacts)
+│
 ├── reports/
+│   └── figures/
+│
 ├── requirements.txt
 └── README.md
 ```
@@ -330,17 +457,130 @@ Key takeaways included:
 
 ---
 
+## � Future Improvements
+
+- [ ] Incorporate player-level statistics and squad information
+- [ ] Include team form from qualifiers and recent friendlies
+- [ ] Add player injury/availability tracking
+- [ ] Improve draw prediction accuracy
+- [ ] Deploy live dashboard with real-time updates
+- [ ] Create REST API for predictions
+- [ ] Add betting odds integration
+- [ ] Implement ELO ranking historical analysis
+- [ ] Add match analytics and tactical insights
+- [ ] Reimplement tournament simulation with enhanced features
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how you can help:
+
+1. **Fork the repository**
+```bash
+git clone https://github.com/yourusername/FootballPulse-AI.git
+```
+
+2. **Create a feature branch**
+```bash
+git checkout -b feature/amazing-feature
+```
+
+3. **Commit your changes**
+```bash
+git commit -m 'Add amazing feature'
+```
+
+4. **Push to the branch**
+```bash
+git push origin feature/amazing-feature
+```
+
+5. **Open a Pull Request**
+
+### Guidelines
+- Follow PEP 8 style guidelines
+- Add docstrings to functions
+- Update README if adding new features
+- Test your changes before submitting PR
+
+---
+
+## ❓ FAQ
+
+**Q: How accurate are the predictions?**
+A: The model achieves ~60% accuracy on historical World Cup matches. This is reasonable for football predictions, as the sport has inherent randomness. Professional prediction models rarely exceed 65% accuracy.
+
+**Q: Can I use this for betting?**
+A: While the model makes reasonable predictions, betting should never be based on a single model. This is an educational project demonstrating ML concepts, not a betting system.
+
+**Q: How is the tournament simulation different from single match prediction?**
+A: Single matches use the trained classifier. Tournament simulation uses match probabilities in a bracket format, running 100+ simulations to estimate championship probabilities.
+
+**Q: Why is draw prediction so low?**
+A: Draws are difficult because they require teams to be perfectly balanced. With only 980 historical matches and draws being relatively rare, the model struggles with this class.
+
+**Q: Can I use this for other football leagues?**
+A: Yes! The framework can be adapted. You'd need to:
+1. Collect historical data for your league
+2. Re-engineer features using league-specific patterns
+3. Retrain the model
+
+---
+
+## 📊 Data Sources
+
+- **Kaggle**: FIFA World Cup historical dataset
+- **NewsAPI**: Real-time football news (optional)
+- **Manual Collection**: 2018 & 2022 World Cup data
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+---
+
 ## 👩‍💻 Author
 
 **Sadia Halima**
 
-Sophomore AI Undergraduate
+- Sophomore AI Undergraduate
+- Machine Learning & Data Science Enthusiast
+- Sports Analytics Passionate
 
-Interested in:
+### Interests
+- Machine Learning
+- Data Science
+- Sports Analytics
+- AI Product Development
 
-* Machine Learning
-* Data Science
-* Sports Analytics
-* AI Product Development
+### Connect
+- GitHub: [@your-github](https://github.com/yourusername)
+- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
+- Email: your.email@example.com
 
-Feel free to connect or provide feedback.
+---
+
+## 🙏 Acknowledgments
+
+- Kaggle for the FIFA World Cup dataset
+- Streamlit for the amazing dashboard framework
+- Scikit-learn and XGBoost communities
+- All contributors and feedback providers
+
+---
+
+## 📞 Support
+
+If you encounter any issues or have questions:
+
+1. Check the FAQ section above
+2. Review the notebook tutorials
+3. Open an GitHub issue
+4. Contact the author
+
+---
+
+**Built with ❤️ for football analytics**
