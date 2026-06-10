@@ -440,7 +440,7 @@ team_options = [t for t in WC2026 if t in all_teams] + [
 #   preview the news/sentiment section right now.
 #   Flip back to False before going live.
 # ══════════════════════════════════════════════════════════
-TEST_NEWS_MODE = False # ← set False for production
+TEST_NEWS_MODE = True # ← set False for production
 
 # ══════════════════════════════════════════════════════════
 # SESSION STATE
@@ -938,19 +938,32 @@ with left_col:
                     padding:9px 0;{border}">{badge}<span style="font-size:12px;color:{nc};font-weight:500">#{word}</span>
                     <span style="font-size:11px;color:#3A3A5A">{cnt_lbl}</span></div>"""
 
-            if not topic_rows:
-                topic_rows = '<div style="font-size:12px;color:#3A3A5A;padding:12px 0;text-align:center">Topics loading — check back soon</div>'
-
-            st.markdown(
-                f"""
-            <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:12px;
-                        padding:16px 20px;margin-bottom:16px;font-family:'Hanken Grotesk',sans-serif">
-              <div style="font-size:10px;color:#5A5A7A;letter-spacing:1.4px;text-transform:uppercase;
-                          font-weight:600;margin-bottom:12px">Trending Topics</div>
-              {topic_rows}
-            </div>""",
-                unsafe_allow_html=True,
-            )
+            if date.today() >= date(2026, 6, 11):
+                if not topic_rows:
+                    topic_rows = '<div style="font-size:12px;color:#3A3A5A;padding:12px 0;text-align:center">Topics loading — check back soon</div>'
+                st.markdown(
+                    f"""
+                <div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:12px;
+                            padding:16px 20px;margin-bottom:16px;font-family:'Hanken Grotesk',sans-serif">
+                  <div style="font-size:10px;color:#5A5A7A;letter-spacing:1.4px;text-transform:uppercase;
+                              font-weight:600;margin-bottom:12px">Trending Topics</div>
+                  {topic_rows}
+                </div>""",
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    '''<div style="background:#13131A;border:0.5px solid #2A2A3A;border-radius:12px;
+                        padding:16px 20px;margin-bottom:16px;font-family:Hanken Grotesk,sans-serif">
+                      <div style="font-size:10px;color:#5A5A7A;letter-spacing:1.4px;text-transform:uppercase;
+                                  font-weight:600;margin-bottom:10px">Trending Topics</div>
+                      <div style="display:flex;align-items:center;gap:10px;padding:12px 0">
+                        <div style="width:7px;height:7px;border-radius:50%;background:#F97316;opacity:0.4"></div>
+                        <span style="font-size:12px;color:#3A3A5A">Live trending unlocks June 11 · Opening match day</span>
+                      </div>
+                    </div>''',
+                    unsafe_allow_html=True,
+                )
 
             az = SentimentIntensityAnalyzer()
             st.markdown(
@@ -1427,8 +1440,22 @@ st.markdown(
 <div style="text-align:center;padding:24px 32px;border-top:0.5px solid #1E1E2E;margin-top:16px;
             font-family:'Hanken Grotesk',sans-serif">
   <div style="font-size:11px;color:#3A3A5A">
-    FootballPulse AI &nbsp;·&nbsp; Built on 92 years of World Cup data &nbsp;·&nbsp; Model accuracy ~57%
-  </div>
+    FootballPulse AI &nbsp;·&nbsp; Built on 92 years of World Cup data &nbsp;·&nbsp;
+    <div style="margin-top:10px">
+    <a href="https://github.com/SHalima8/FootballPulse-AI"
+       target="_blank"
+       style="
+            color:#8FA8FF;
+            font-family:'Hanken Grotesk',sans-serif"
+            text-decoration:none;
+            font-size:11px;
+            letter-spacing:0.5px;
+            text-transform:uppercase;
+            font-weight:600;">
+        ↗ Explore the Codebase
+    </a>
+</div>
+  
   <div style="font-size:11px;color:#2A2A3A;margin-top:4px">
     Predictions are probabilistic — football is beautifully unpredictable
   </div>
