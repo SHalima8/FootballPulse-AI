@@ -8,6 +8,8 @@ from textwrap import dedent
 from datetime import date
 from dotenv import load_dotenv
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 st.set_page_config(
@@ -196,7 +198,7 @@ def fetch_newsapi(team):
     try:
         from newsapi import NewsApiClient
 
-        api_key = os.getenv("NEWS_API_KEY", "")
+        api_key = st.secrets.get("NEWS_API_KEY", "") or os.getenv("NEWS_API_KEY", "")
         if not api_key:
             return []
         client = NewsApiClient(api_key=api_key)
@@ -238,7 +240,7 @@ def analyse_sentiment(articles):
 # ══════════════════════════════════════════════════════════
 @st.cache_resource
 def load_model():
-    base = os.path.join(os.path.dirname(__file__), "..", "models")
+    base = os.path.join(ROOT, "models")
     model = joblib.load(os.path.join(base, "model.pkl"))
     features = joblib.load(os.path.join(base, "feature_columns.pkl"))
     return model, features
@@ -247,7 +249,7 @@ def load_model():
 @st.cache_data
 def load_data():
     path = os.path.join(
-        os.path.dirname(__file__), "..", "data", "processed", "clean_matches.csv"
+        os.path.join(ROOT, "data", "processed", "clean_matches.csv")
     )
     df = pd.read_csv(path)
     return df.sort_values("Year").reset_index(drop=True)
@@ -1164,45 +1166,7 @@ with right_col:
                 if count >= 2
             ]
 
-            if top_teams:
-
-                team_rows = "".join([f"""
-                    <div style="
-                        display:flex;
-                        justify-content:space-between;
-                        align-items:center;
-                        padding:6px 0;
-                        border-bottom:0.5px solid #1E1E2E;
-                    ">
-                        <span style="
-                            font-size:12px;
-                            color:#E2E2F0;
-                        ">
-                            {team}
-                        </span>
-
-                        <span style="
-                            font-size:11px;
-                            color:#A855F7;
-                            font-weight:700;
-                        ">
-                            {count}×
-                        </span>
-                    </div>
-                    """ for team, count in top_teams])
-
-            else:
-
-             team_rows = """
-<div style="
-    font-size:11px;
-    color:#8B8BA7;
-    padding:8px 0;
-    line-height:1.5;
-">
-    No dominant team discussions in current headlines
-</div>
-"""
+        
 
             # ---------- SENTIMENT DASHBOARD CARD ----------
 
@@ -1288,13 +1252,6 @@ with right_col:
     </div>
   </div>
 
-  <!-- Divider -->
-  <div style="height:0.5px;background:#1E1E2E;margin:14px 0"></div>
-
-  <!-- Most mentioned teams -->
-  <div style="font-size:9px;color:#5A5A7A;letter-spacing:1.2px;text-transform:uppercase;
-              font-weight:600;margin-bottom:10px">Most Mentioned Teams</div>
-  {team_rows}
 
 </div>""",
     unsafe_allow_html=True,
@@ -1444,14 +1401,9 @@ st.markdown(
     <div style="margin-top:10px">
     <a href="https://github.com/SHalima8/FootballPulse-AI"
        target="_blank"
-       style="
-            color:#8FA8FF;
-            font-family:'Hanken Grotesk',sans-serif"
-            text-decoration:none;
-            font-size:11px;
-            letter-spacing:0.5px;
-            text-transform:uppercase;
-            font-weight:600;">
+       style="color:#8FA8FF;font-family:'Hanken Grotesk',sans-serif;
+              text-decoration:none;font-size:11px;letter-spacing:0.5px;
+              text-transform:uppercase;font-weight:600;">
         ↗ Explore the Codebase
     </a>
 </div>
